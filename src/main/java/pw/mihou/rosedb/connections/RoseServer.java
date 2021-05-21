@@ -1,6 +1,7 @@
 package pw.mihou.rosedb.connections;
 
 import io.javalin.Javalin;
+import io.javalin.http.util.RateLimit;
 import io.javalin.websocket.WsContext;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONException;
@@ -27,6 +28,11 @@ public class RoseServer {
 
     public static void reply(WsContext context, String response, int kode) {
         context.send(new JSONObject().put("response", response).put("kode", kode).toString());
+    }
+
+    public static void reply(WsContext context, String response, String unique, int kode) {
+        context.send(new JSONObject().put("response", response).put("kode", kode)
+                .put("replyTo", unique).toString());
     }
 
     public static RoseDatabase getDatabase(String db) {

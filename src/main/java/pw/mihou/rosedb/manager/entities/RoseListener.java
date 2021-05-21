@@ -8,6 +8,6 @@ public interface RoseListener {
 
     Listening type();
 
-    void execute(JSONObject request, WsContext context);
+    void execute(JSONObject request, WsContext context, String unique);
 
 }

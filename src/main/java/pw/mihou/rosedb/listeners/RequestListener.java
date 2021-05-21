@@ -14,13 +14,13 @@ public class RequestListener implements RoseListener {
     }
 
     @Override
-    public void execute(JSONObject request, WsContext context) {
+    public void execute(JSONObject request, WsContext context, String unique) {
         if (request.isNull("identifier") || request.isNull("database") || request.isNull("collection")) {
-            RoseServer.reply(context, "Missing parameters either: [identifier], [database], [collection]", -1);
+            RoseServer.reply(context, "Missing parameters either: [identifier], [database], [collection]", unique, -1);
         } else {
             RoseServer.getDatabase(request.getString("database")).getCollection(request.getString("collection"))
-                    .get(request.getString("identifier")).ifPresentOrElse(roseEntity -> RoseServer.reply(context, roseEntity.get(), 1),
-                    () -> RoseServer.reply(context, "No results.", 0));
+                    .get(request.getString("identifier")).ifPresentOrElse(roseEntity -> RoseServer.reply(context, roseEntity.get(), unique, 1),
+                    () -> RoseServer.reply(context, "No results.", unique,0));
         }
     }
 }

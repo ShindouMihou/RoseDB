@@ -13,13 +13,13 @@ public class DeleteListener implements RoseListener {
     }
 
     @Override
-    public void execute(JSONObject request, WsContext context) {
+    public void execute(JSONObject request, WsContext context, String unique) {
         if (request.isNull("identifier") || request.isNull("database") || request.isNull("collection")) {
-            RoseServer.reply(context, "Missing parameters either: [identifier], [database], [collection]", -1);
+            RoseServer.reply(context, "Missing parameters either: [identifier], [database], [collection]", unique,-1);
         } else {
             RoseServer.getDatabase(request.getString("database")).getCollection(request.getString("collection"))
                     .delete(request.getString("identifier"));
-            RoseServer.reply(context, "Successful", 1);
+            RoseServer.reply(context, "The item: " + request.getString("identifier") + " was deleted.", unique, 1);
         }
     }
 }

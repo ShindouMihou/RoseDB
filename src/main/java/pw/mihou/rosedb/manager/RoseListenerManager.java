@@ -23,11 +23,15 @@ public class RoseListenerManager {
     }
 
     public static void execute(JSONObject request, WsContext context) {
-        if (!(request.isNull("authorization")) && request.getString("authorization").equalsIgnoreCase(RoseDB.authorization)) {
-            listeners.stream().filter(roseListener -> roseListener.type().value.equalsIgnoreCase(request.getString("method")))
-                    .forEach(roseListener -> CompletableFuture.runAsync(() -> roseListener.execute(request, context)));
+        if(!request.isNull("unique")) {
+            if (!(request.isNull("authorization")) && request.getString("authorization").equalsIgnoreCase(RoseDB.authorization)) {
+                listeners.stream().filter(roseListener -> roseListener.type().value.equalsIgnoreCase(request.getString("method")))
+                        .forEach(roseListener -> CompletableFuture.runAsync(() -> roseListener.execute(request, context, request.getString("unique"))));
+            } else {
+                RoseServer.reply(context, "Invalid authorization code.", -1);
+            }
         } else {
-            RoseServer.reply(context, "Invalid authorization code.", -1);
+            RoseServer.reply(context, "Please add a unique identifier to your request.", -1);
         }
     }
 
