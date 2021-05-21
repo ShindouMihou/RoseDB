@@ -14,21 +14,23 @@ This was created as a joke for me and also a shower thought about making somethi
 
 **How does it work?**
 
-RoseDB works by storing data on both cache and files similar to Redis and MongoDB, for the external requests, it uses
-webhooks with the requests being in JSON format.
+RoseDB works by storing data on both cache and files similar to Redis and MongoDB. It utilizes webhooks to receive and send data
+to external applications and should be more than capable to process thousands of requests per second.
 
 **What are you trying to achieve with this?**
 
-The goal of RoseDB is simplicity and speed, for example, Discord bots that only need a small database to store simple
-data like prefixes and nothing sensitive.
+RoseDB's primary goal is for speed and simplicity. You can go ahead and install RoseDB, grab a driver or Postman and quickly
+get started with started with it from making requests to simply editing values of the data.
 
 **How secure is this?**
 
-Currently, the security of RoseDB is basically tomato sauce; it only has one security feature which is authorization
-token which is required in every request since what we wanted was a simple database that can only be accessed privately
-for example Discord bots where you cannot see what the IP, Port and Authorization token is without leaking it yourself.
+The security of RoseDB as of current is lacking. It only has one security feature which is the authorization requirement or
+the authentication requirement. Authorization is required in every request to ensure that the requesting party is authorized.
+We do have plans to increasing and adding more security and flexibility but for now, we are focusing on simplicity.
 
-We do have plans on increasing security in accordance to best practices but then again, this is still a joke for me.
+RoseDB, in our opinion, is better suited for simple applications like tiny Discord bots that is shared among friends containing
+only data like server prefixes and all those other simple data that you can find with a Discord bot and also the fact that it is
+hard for a Discord bot to leak its IP Address, Database Port and Authorization token unless you leak it yourself.
 
 ## How to install?
 
@@ -41,6 +43,7 @@ the steps of installing RoseDB.
 3. Open Terminal or Powershell then execute the following line: `java -jar RoseDB.jar`
 4. **OPTIONAL** CTRL + C (or exit) the application then head to the folder where you will find a config.json.
 5. **OPTIONAL** Configure the JSON config as you like.
+6. **OPTIONAL** Run the jar file again with the same line: `java -jar RoseDB.jar`
 
 ## How to configure?
 
