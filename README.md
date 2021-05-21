@@ -1,4 +1,5 @@
-# RoseDB
+![RoseDB](https://cdn.mihou.pw/rosedb.png)
+
 [![Maintenance](https://img.shields.io/badge/Actively%20Developed%3F-Yes-green.svg)](https://GitHub.com/ShindouMihou/RoseDB/graphs/commit-activity)
 [![Build Status](https://travis-ci.com/ShindouMihou/RoseDB.svg?branch=master)](https://travis-ci.com/ShindouMihou/RoseDB)
 [![Release](https://img.shields.io/github/v/release/ShindouMihou/RoseDB)](https://github.com/ShindouMihou/RoseDB/releases)
@@ -7,8 +8,9 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/shindoumihou/rosedb/badge)](https://www.codefactor.io/repository/github/shindoumihou/rosedb)
 ![GitHub](https://img.shields.io/github/license/ShindouMihou/RoseDB)
 
-RoseDB, a full-fledged, simple, NoSQL database created in Java with only the basic functions; 
-this was created as a joke for me and also a shower thought about making something similar to MongoDB but simplified.
+## What is RoseDB?
+RoseDB is a simple, NoSQL database completely made in Java containing the basic functions that is needed for a database. 
+This was created as a joke for me and also a shower thought about making something similar to MongoDB but simplified.
 
 **How does it work?**
 
