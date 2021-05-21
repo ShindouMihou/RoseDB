@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class FileHandler {
 
     private static final ConcurrentLinkedQueue<RoseRequest> queue = new ConcurrentLinkedQueue<>();
+
     private static final FilenameFilter filter = (dir, name) -> name.toLowerCase().endsWith(".rose") && dir.isFile();
 
     public static CompletableFuture<String> read(String path) {
@@ -64,7 +65,6 @@ public class FileHandler {
                     .thenAccept(s -> writeToFile(String.format(RoseDB.directory + "/%s/%s/%s.rose", request.database,
                             request.collection, request.identifier), request.json));
         }
-
         if (!queue.isEmpty())
             writeDataAsJson(queue.poll());
     }
@@ -104,7 +104,7 @@ public class FileHandler {
         if (contents != null) {
             for (File content : contents) {
                 if (content.isDirectory())
-                    data.cache(FilenameUtils.getBaseName(content.getName()), readCollection(FilenameUtils.getBaseName(content.getName()), database));
+                    data.cache(FilenameUtils.getBaseName(content.getName()), readCollection(database, FilenameUtils.getBaseName(content.getName())));
             }
         }
 

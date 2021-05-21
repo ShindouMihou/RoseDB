@@ -19,16 +19,9 @@ public class RoseDB {
 
     public static void main(String[] args) throws URISyntaxException {
         if (!new File("config.json").exists()) {
-            FileHandler.writeToFile("config.json",
-                    new JSONObject()
-                            .put("directory", new File(RoseDB.class
-                                    .getProtectionDomain()
-                                    .getCodeSource()
-                                    .getLocation()
-                                    .toURI()
-                                    .getPath())
-                                    .getParentFile()
-                                    .getPath() + "\\Database\\")
+            FileHandler.writeToFile("config.json", new JSONObject()
+                            .put("directory", new File(RoseDB.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath())
+                                    .getParentFile().getPath() + "\\Database\\")
                             .put("port", port).put("authorization", UUID.randomUUID().toString())
                             .put("loggingLevel", "INFO").toString()).join();
         }
@@ -38,14 +31,8 @@ public class RoseDB {
         port = config.isNull("port") ? 5995 : config.getInt("port");
 
         directory = Optional.ofNullable(config.getString("directory"))
-                .orElse(new File(RoseDB.class
-                        .getProtectionDomain()
-                        .getCodeSource()
-                        .getLocation()
-                        .toURI()
-                        .getPath())
-                        .getParentFile()
-                        .getPath() + "\\Database\\");
+                .orElse(new File(RoseDB.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath())
+                        .getParentFile().getPath() + "\\Database\\");
 
         authorization = Optional.ofNullable(config.getString("authorization"))
                 .orElse("null");
