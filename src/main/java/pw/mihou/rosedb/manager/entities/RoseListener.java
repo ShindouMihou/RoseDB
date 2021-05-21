@@ -7,6 +7,7 @@ import pw.mihou.rosedb.enums.Listening;
 public interface RoseListener {
 
     Listening type();
+
     void execute(JSONObject request, WsContext context);
 
 }

@@ -15,14 +15,14 @@ public class AddListener implements RoseListener {
 
     @Override
     public void execute(JSONObject request, WsContext context) {
-        if(request.isNull("value") || request.isNull("identifier")
-                || request.isNull("database") || request.isNull("collection")){
+        if (request.isNull("value") || request.isNull("identifier")
+                || request.isNull("database") || request.isNull("collection")) {
             RoseServer.reply(context, "Missing parameters either: [value], [identifier], [database], [collection]", -1);
         } else {
-           RoseCollections collections = RoseServer.getDatabase(request.getString("database")).getCollection(request.getString("collection"));
-           collections.add(request.getString("identifier"), request.getString("value"));
-           collections.get(request.getString("identifier")).ifPresentOrElse(roseEntity -> RoseServer.reply(context, roseEntity.get(), 1),
-                           () -> RoseServer.reply(context, "Failed to update value.", 0));
+            RoseCollections collections = RoseServer.getDatabase(request.getString("database")).getCollection(request.getString("collection"));
+            collections.add(request.getString("identifier"), request.getString("value"));
+            collections.get(request.getString("identifier")).ifPresentOrElse(roseEntity -> RoseServer.reply(context, roseEntity.get(), 1),
+                    () -> RoseServer.reply(context, "Failed to update value.", 0));
         }
     }
 }

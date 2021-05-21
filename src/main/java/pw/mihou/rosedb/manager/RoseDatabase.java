@@ -14,23 +14,23 @@ public class RoseDatabase {
     private final String database;
     private final Map<String, RoseCollections> rosy = new ConcurrentHashMap<>();
 
-    public RoseDatabase(String database){
+    public RoseDatabase(String database) {
         this.database = database;
     }
 
-    public void cache(String collection, RoseCollections collections){
+    public void cache(String collection, RoseCollections collections) {
         this.rosy.put(collection, collections);
     }
 
-    public RoseCollections getCollection(String collection){
-        if(!rosy.containsKey(collection))
+    public RoseCollections getCollection(String collection) {
+        if (!rosy.containsKey(collection))
             rosy.put(collection, FileHandler.readCollection(database, collection));
 
         return rosy.get(collection);
     }
 
     public void removeCollection(String collection) throws IOException {
-        FileUtils.deleteDirectory(new File(String.format(RoseDB.directory+"/%s/%s/", database, collection)));
+        FileUtils.deleteDirectory(new File(String.format(RoseDB.directory + "/%s/%s/", database, collection)));
         this.rosy.remove(collection);
     }
 

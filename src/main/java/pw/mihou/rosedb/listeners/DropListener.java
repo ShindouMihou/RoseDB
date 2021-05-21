@@ -16,11 +16,11 @@ public class DropListener implements RoseListener {
 
     @Override
     public void execute(JSONObject request, WsContext context) {
-        if(request.isNull("database") && request.isNull("collection") || request.isNull("database") && !request.isNull("collection")){
+        if (request.isNull("database") && request.isNull("collection") || request.isNull("database") && !request.isNull("collection")) {
             RoseServer.reply(context, "Missing parameters either: [database], [collection]", -1);
         } else {
             try {
-                if(request.isNull("collection")){
+                if (request.isNull("collection")) {
                     RoseServer.removeDatabase(request.getString("database"));
                     RoseServer.reply(context, "Successfully deleted the database " + request.getString("database"), 1);
                 } else {

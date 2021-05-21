@@ -24,12 +24,12 @@ public class RoseServer {
     private static final Map<String, WsContext> context = new ConcurrentHashMap<>();
     private static final Map<String, RoseDatabase> database = new ConcurrentHashMap<>();
 
-    public static void reply(WsContext context, String response, int kode){
+    public static void reply(WsContext context, String response, int kode) {
         context.send(new JSONObject().put("response", response).put("kode", kode).toString());
     }
 
-    public static RoseDatabase getDatabase(String db){
-        if(!database.containsKey(db.toLowerCase()))
+    public static RoseDatabase getDatabase(String db) {
+        if (!database.containsKey(db.toLowerCase()))
             database.put(db.toLowerCase(), FileHandler.readDatabase(db.toLowerCase()));
 
         return database.get(db.toLowerCase());
@@ -37,10 +37,10 @@ public class RoseServer {
 
     public static void removeDatabase(String db) throws IOException {
         database.remove(db.toLowerCase());
-        FileUtils.deleteDirectory(new File(String.format(RoseDB.directory+"/%s/", db)));
+        FileUtils.deleteDirectory(new File(String.format(RoseDB.directory + "/%s/", db)));
     }
 
-    private static void register(){
+    private static void register() {
         RoseListenerManager.register(new RequestListener());
         RoseListenerManager.register(new AddListener());
         RoseListenerManager.register(new DeleteListener());
@@ -48,7 +48,7 @@ public class RoseServer {
         RoseListenerManager.register(new DropListener());
     }
 
-    private static void startHeartbeat(){
+    private static void startHeartbeat() {
         Scheduler.schedule(() -> context.values()
                 .stream()
                 .filter(wsContext -> wsContext.session.isOpen())
@@ -58,7 +58,7 @@ public class RoseServer {
         Terminal.log(Levels.DEBUG, "Heartbeat listener is now active.");
     }
 
-    public static void run(int port){
+    public static void run(int port) {
         register();
 
         System.out.println(" ______  ______  ______  ______  _____   ______    \n" +
@@ -84,10 +84,10 @@ public class RoseServer {
 
         Terminal.log(Levels.DEBUG, "All events and handlers are now ready.");
 
-        app.ws("/" , ws -> {
-           ws.onConnect(ctx -> context.put(ctx.getSessionId(), ctx));
-           ws.onClose(ctx -> context.remove(ctx.getSessionId()));
-           ws.onMessage(ctx -> RoseListenerManager.execute(new JSONObject(ctx.message()), ctx));
+        app.ws("/", ws -> {
+            ws.onConnect(ctx -> context.put(ctx.getSessionId(), ctx));
+            ws.onClose(ctx -> context.remove(ctx.getSessionId()));
+            ws.onMessage(ctx -> RoseListenerManager.execute(new JSONObject(ctx.message()), ctx));
         });
 
         Terminal.log(Levels.INFO, "RoseDB is now running on port: " + port);

@@ -14,11 +14,16 @@ public class RoseListenerManager {
 
     private static final List<RoseListener> listeners = new ArrayList<>();
 
-    public static void register(RoseListener listener) {listeners.add(listener);}
-    public static void remove(RoseListener listener){listeners.remove(listener);}
+    public static void register(RoseListener listener) {
+        listeners.add(listener);
+    }
 
-    public static void execute(JSONObject request, WsContext context){
-        if(!(request.isNull("authorization")) && request.getString("authorization").equalsIgnoreCase(RoseDB.authorization)) {
+    public static void remove(RoseListener listener) {
+        listeners.remove(listener);
+    }
+
+    public static void execute(JSONObject request, WsContext context) {
+        if (!(request.isNull("authorization")) && request.getString("authorization").equalsIgnoreCase(RoseDB.authorization)) {
             listeners.stream().filter(roseListener -> roseListener.type().value.equalsIgnoreCase(request.getString("method")))
                     .forEach(roseListener -> CompletableFuture.runAsync(() -> roseListener.execute(request, context)));
         } else {

@@ -6,7 +6,7 @@ public enum Listening {
 
     public final String value;
 
-    Listening(String value){
+    Listening(String value) {
         this.value = value;
     }
 

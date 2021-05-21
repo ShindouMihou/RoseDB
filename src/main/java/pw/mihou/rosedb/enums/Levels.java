@@ -7,8 +7,9 @@ public enum Levels {
     public final String name;
     public final int id;
 
-    Levels(String name, int id){
-        this.name = name; this.id = id;
+    Levels(String name, int id) {
+        this.name = name;
+        this.id = id;
     }
 
 }

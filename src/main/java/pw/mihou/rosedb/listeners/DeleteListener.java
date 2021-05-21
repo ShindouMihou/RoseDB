@@ -14,7 +14,7 @@ public class DeleteListener implements RoseListener {
 
     @Override
     public void execute(JSONObject request, WsContext context) {
-        if(request.isNull("identifier") || request.isNull("database") || request.isNull("collection")){
+        if (request.isNull("identifier") || request.isNull("database") || request.isNull("collection")) {
             RoseServer.reply(context, "Missing parameters either: [identifier], [database], [collection]", -1);
         } else {
             RoseServer.getDatabase(request.getString("database")).getCollection(request.getString("collection"))
