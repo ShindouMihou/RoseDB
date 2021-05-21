@@ -4,6 +4,8 @@
 [![Release](https://img.shields.io/github/v/release/ShindouMihou/RoseDB)](https://github.com/ShindouMihou/RoseDB/releases)
 [![Discord](https://img.shields.io/discord/807084089013174272?logo=Discord)](https://discord.gg/9FefYq4p83)
 [![Commits](https://img.shields.io/github/last-commit/ShindouMihou/RoseDB)](https://github.com/ShindouMihou/RoseDB/commits)
+[![CodeFactor](https://www.codefactor.io/repository/github/shindoumihou/rosedb/badge)](https://www.codefactor.io/repository/github/shindoumihou/rosedb)
+![GitHub](https://img.shields.io/github/license/ShindouMihou/RoseDB)
 
 RoseDB, a full-fledged, simple, NoSQL database created in Java with only the basic functions; 
 this was created as a joke for me and also a shower thought about making something similar to MongoDB but simplified.
@@ -43,10 +45,10 @@ the steps of installing RoseDB.
 Configuration of RoseDB is straightforward, here is an example of a configuration file.
 ```json
 {
-"authorization":"8a4b93a0-a6d8-4403-a44f-5cff82a537e5",
-"port":5995,
-"directory":"C:\\Users\\Owner\\Documents\\RoseDB\\Database\\",
-"loggingLevel":"INFO"
+    "authorization": "8a4b93a0-a6d8-4403-a44f-5cff82a537e5",
+    "port": 5995,
+    "directory": "C:\\Users\\Owner\\Documents\\RoseDB\\Database\\",
+    "loggingLevel": "INFO"
 }
 ```
 
@@ -68,19 +70,19 @@ Also, everything is sent via webhooks which means the address to use is somethin
 To send a GET request, you can do:
 ```json
 {
-"authorization": "Authorization here", 
-"method": "get",
-"database": "Database here",
-"collection": "Collection Here",
-"identifier": "Identification of the data here."
+    "authorization": "Authorization here",
+    "method": "get",
+    "database": "Database here",
+    "collection": "Collection Here",
+    "identifier": "Identification of the data here."
 }
 ```
 
 It should reply with:
 ```json
 {
-"response":  "{//entire json data here}",
- "kode":  1
+    "response": "{//entire json data here}",
+    "kode": 1
 }
 ```
 
@@ -89,20 +91,20 @@ It should reply with:
 * UPDATE and ADD are both the same except UPDATE uses `"method":"update"`
 ```json
 {
-"authorization": "Authorization here", 
-"method": "add",
-"database": "Database here",
-"collection": "Collection Here",
-"identifier": "Identification of the data here.",
-"value":  "{//json format of the values here}"
+    "authorization": "Authorization here",
+    "method": "add",
+    "database": "Database here",
+    "collection": "Collection Here",
+    "identifier": "Identification of the data here.",
+    "value": "{//json format of the values here}"
 }
 ```
 
 It should reply with:
 ```json
 {
-"response":  "{//entire json data here}",
- "kode":  1
+    "response": "{//entire json data here}",
+    "kode": 1
 }
 ```
 
@@ -111,11 +113,11 @@ It should reply with:
 To send a DELETE request, you can do:
 ```json
 {
-"authorization": "Authorization here", 
-"method": "delete",
-"database": "Database here",
-"collection": "Collection Here",
-"identifier": "Identification of the data here."
+    "authorization": "Authorization here",
+    "method": "delete",
+    "database": "Database here",
+    "collection": "Collection Here",
+    "identifier": "Identification of the data here."
 }
 ```
 
@@ -182,6 +184,6 @@ The expected response should be
 * Improve code for readability.
 
 ## Credits
-* Javalin IO [javalin.io](https://javalin.io) for websockets.
+* [Javalin IO](https://javalin.io) for websockets.
 * Apache Commons IO for FilenameUtils.
-* Json.Json for JSON Decoding and Encoding.
+* [org.json](https://mvnrepository.com/artifact/org.json/json/20210307) for JSON Decoding and Encoding.
