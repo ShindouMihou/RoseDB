@@ -6,7 +6,7 @@
 
     <groupId>pw.mihou</groupId>
     <artifactId>RoseDB</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.1</version>
     <build>
         <plugins>
             <plugin>

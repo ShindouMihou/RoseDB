@@ -1,5 +1,6 @@
 language: java
 jdk: 
   - openjdk11
-sudo: false
 script: mvn clean verify
+os: linux
+dist: xenial

@@ -20,9 +20,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class FileHandler {
 
-    private static final String DATA_FORMAT = RoseDB.directory + "/%s/%s/%s.rose";
-    private static final String DATABASE_FORMAT = RoseDB.directory + "/%s";
-    private static final String COLLECTION_FORMAT = RoseDB.directory + "/%s/%s";
     private static final ConcurrentLinkedQueue<RoseRequest> queue = new ConcurrentLinkedQueue<>();
     private static final FilenameFilter filter = (dir, name) -> name.toLowerCase().endsWith(".rose") && dir.isFile();
 
@@ -54,17 +51,17 @@ public class FileHandler {
     public static boolean delete(String database, String collection, String identifier) {
         queue.stream().filter(roseRequest -> roseRequest.identifier.equalsIgnoreCase(identifier)).forEachOrdered(queue::remove);
 
-        return FileUtils.deleteQuietly(new File(String.format(DATA_FORMAT, database, collection, identifier)));
+        return FileUtils.deleteQuietly(new File(String.format(RoseDB.directory + "/%s/%s/%s.rose", database, collection, identifier)));
     }
 
     private static void writeDataAsJson(RoseRequest request) {
-        File file = new File(String.format(DATA_FORMAT, request.database, request.collection, request.identifier));
+        File file = new File(String.format(RoseDB.directory + "/%s/%s/%s.rose", request.database, request.collection, request.identifier));
 
         if (!file.exists()) {
-            writeToFile(String.format(DATA_FORMAT, request.database, request.collection, request.identifier), request.json);
+            writeToFile(String.format(RoseDB.directory + "/%s/%s/%s.rose", request.database, request.collection, request.identifier), request.json);
         } else {
-            read(String.format(DATA_FORMAT, request.database, request.collection, request.identifier))
-                    .thenAccept(s -> writeToFile(String.format(DATA_FORMAT, request.database,
+            read(String.format(RoseDB.directory + "/%s/%s/%s.rose", request.database, request.collection, request.identifier))
+                    .thenAccept(s -> writeToFile(String.format(RoseDB.directory + "/%s/%s/%s.rose", request.database,
                             request.collection, request.identifier), request.json));
         }
 
@@ -83,11 +80,10 @@ public class FileHandler {
     }
 
     public static RoseCollections readCollection(String database, String collection) {
-        final File file = new File(String.format(COLLECTION_FORMAT, database, collection));
-        if (!file.exists())
-            file.mkdirs();
+        if (!new File(String.format(RoseDB.directory + "/%s/%s", database, collection)).exists())
+            new File(String.format(RoseDB.directory + "/%s/%s", database, collection)).mkdirs();
 
-        File[] contents = file.listFiles(filter);
+        File[] contents = new File(String.format(RoseDB.directory + "/%s/%s", database, collection)).listFiles(filter);
         RoseCollections collections = new RoseCollections(collection, database);
 
         if (contents != null) {
@@ -99,11 +95,10 @@ public class FileHandler {
     }
 
     public static RoseDatabase readDatabase(String database) {
-        final File file = new File(String.format(DATABASE_FORMAT, database));
-        if (!file.exists())
-            file.mkdirs();
+        if (!new File(String.format(RoseDB.directory + "/%s", database)).exists())
+            new File(String.format(RoseDB.directory + "/%s", database)).mkdirs();
 
-        File[] contents = file.listFiles();
+        File[] contents = new File(String.format(RoseDB.directory + "/%s", database)).listFiles();
         RoseDatabase data = new RoseDatabase(database);
 
         if (contents != null) {
@@ -117,10 +112,10 @@ public class FileHandler {
     }
 
     public static Optional<RoseEntity> readData(String database, String collection, String identifier) {
-        if (!new File(String.format(DATA_FORMAT, database, collection, identifier)).exists())
+        if (!new File(String.format(RoseDB.directory + "/%s/%s/%s.rose", database, collection, identifier)).exists())
             return Optional.empty();
 
-        return Optional.of(new RoseEntity(read(String.format(DATA_FORMAT, database, collection, identifier)).join()));
+        return Optional.of(new RoseEntity(read(String.format(RoseDB.directory + "/%s/%s/%s.rose", database, collection, identifier)).join()));
     }
 
 }
