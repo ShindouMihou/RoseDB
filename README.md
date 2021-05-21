@@ -5,6 +5,7 @@
 [![Discord](https://img.shields.io/discord/807084089013174272?logo=Discord)](https://discord.gg/9FefYq4p83)
 [![Commits](https://img.shields.io/github/last-commit/ShindouMihou/RoseDB)](https://github.com/ShindouMihou/RoseDB/commits)
 [![CodeFactor](https://www.codefactor.io/repository/github/shindoumihou/rosedb/badge)](https://www.codefactor.io/repository/github/shindoumihou/rosedb)
+![GitHub](https://img.shields.io/github/license/ShindouMihou/RoseDB)
 
 RoseDB, a full-fledged, simple, NoSQL database created in Java with only the basic functions; 
 this was created as a joke for me and also a shower thought about making something similar to MongoDB but simplified.
