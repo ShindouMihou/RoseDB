@@ -60,6 +60,10 @@ application makes a custom one like that.
 where RoseDB.jar is located with "/database/" added at the end).
 * **loggingLevel**: the logging level minimum that RoseDB will log (default: INFO).
 
+## Wrappers
+If you want to quickly get up and running with your application then feel free to use our wrappers.
+* [Rose Java Wrapper (Asynchronous)](https://github.com/ShindouMihou/Rose-Java-Driver)
+
 ## How to send requests?
 
 Sending requests is also straightforward with the database, everything is on JSON format. 
@@ -235,12 +239,11 @@ The expected response should be
 * Get Request: ![get request](https://media.discordapp.net/attachments/731377154817916939/845258046812061736/unknown.png)
 
 ## TODO
-* Create a Driver for Java
 * Create a Driver for PHP
 * Add more security features.
 * Improve code for readability.
 
 ## Credits
 * [Javalin IO](https://javalin.io) for websockets.
-* Apache Commons IO for FilenameUtils.
+* [Apache Commons IO](https://commons.apache.org/) for FilenameUtils.
 * [org.json](https://mvnrepository.com/artifact/org.json/json/20210307) for JSON Decoding and Encoding.
