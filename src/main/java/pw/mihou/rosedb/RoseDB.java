@@ -19,18 +19,39 @@ public class RoseDB {
 
     public static void main(String[] args) throws URISyntaxException {
         if (!new File("config.json").exists()) {
-            FileHandler.writeToFile("config.json", new JSONObject().put("directory",
-                    new File(RoseDB.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile().getPath() + "\\Database\\")
-                    .put("port", port).put("authorization", UUID.randomUUID().toString())
-                    .put("loggingLevel", "INFO").toString()).join();
+            FileHandler.writeToFile("config.json",
+                    new JSONObject()
+                            .put("directory", new File(RoseDB.class
+                                    .getProtectionDomain()
+                                    .getCodeSource()
+                                    .getLocation()
+                                    .toURI()
+                                    .getPath())
+                                    .getParentFile()
+                                    .getPath() + "\\Database\\")
+                            .put("port", port).put("authorization", UUID.randomUUID().toString())
+                            .put("loggingLevel", "INFO").toString()).join();
         }
 
-        // Read the default configuration file.
         JSONObject config = new JSONObject(FileHandler.read("config.json").join());
+
         port = config.isNull("port") ? 5995 : config.getInt("port");
-        directory = Optional.ofNullable(config.getString("directory")).orElse(new File(RoseDB.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile().getPath() + "\\Database\\");
-        authorization = Optional.ofNullable(config.getString("authorization")).orElse("null");
-        Terminal.setLoggingLevel(rootLevel(Optional.ofNullable(config.getString("loggingLevel")).orElse("INFO")));
+
+        directory = Optional.ofNullable(config.getString("directory"))
+                .orElse(new File(RoseDB.class
+                        .getProtectionDomain()
+                        .getCodeSource()
+                        .getLocation()
+                        .toURI()
+                        .getPath())
+                        .getParentFile()
+                        .getPath() + "\\Database\\");
+
+        authorization = Optional.ofNullable(config.getString("authorization"))
+                .orElse("null");
+
+        Terminal.setLoggingLevel(rootLevel(Optional.ofNullable(config.getString("loggingLevel"))
+                .orElse("INFO")));
 
         if (!new File(directory).exists())
             new File(directory).mkdirs();
