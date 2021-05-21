@@ -74,7 +74,8 @@ To send a GET request, you can do:
     "method": "get",
     "database": "Database here",
     "collection": "Collection Here",
-    "identifier": "Identification of the data here."
+    "identifier": "Identification of the data here.",
+    "unique": "Unique identifier here, you can use this to retrieve callback"
 }
 ```
 
@@ -82,7 +83,8 @@ It should reply with:
 ```json
 {
     "response": "{//entire json data here}",
-    "kode": 1
+    "kode": 1,
+    "replyTo": "Unique identifier from request"
 }
 ```
 
@@ -96,15 +98,39 @@ It should reply with:
     "database": "Database here",
     "collection": "Collection Here",
     "identifier": "Identification of the data here.",
-    "value": "{//json format of the values here}"
+    "value": "{//json format of the values here}",
+    "unique": "Unique identifier here, you can use this to retrieve callback"
 }
 ```
 
-It should reply with:
+Update also allows you to update (and add) values and keys, for example:
 ```json
 {
-    "response": "{//entire json data here}",
-    "kode": 1
+    "authorization": "ca72b368-0c4a-4a73-9e4c-9e22474b359c",
+    "method": "update",
+    "database": "rose_db",
+    "collection": "mana",
+    "identifier": "application",
+    "key": [
+        "id",
+        "code",
+        "file"
+    ],
+    "value": [
+        "1.2",
+        "valuable",
+        "textfile"
+    ],
+    "unique": "255asd2"
+}
+```
+
+It should reply with something like:
+```json
+{
+    "response": "{\"code\":\"valuable\",\"file\":\"textfile\",\"id\":\"1.2\"}",
+    "kode": 1,
+    "replyTo": "255asd2"
 }
 ```
 
@@ -117,15 +143,42 @@ To send a DELETE request, you can do:
     "method": "delete",
     "database": "Database here",
     "collection": "Collection Here",
-    "identifier": "Identification of the data here."
+    "identifier": "Identification of the data here.",
+    "unique": "Unique identifier to receive from callback."
 }
 ```
 
 It should reply with:
 ```json
 {
-    "response": "Successful",
-    "kode": 1
+    "response": "The item [identifier] was deleted.",
+    "kode": 1,
+    "replyTo": "Unique identifier from request"
+}
+```
+
+Similar to UPDATE requests, you can also delete multiple or single keys from the data, for example:
+```json
+{
+    "authorization": "ca72b368-0c4a-4a73-9e4c-9e22474b359c",
+    "method": "delete",
+    "database": "rose_db",
+    "collection": "mana",
+    "identifier": "application",
+    "key": [
+        "code",
+        "file"
+    ],
+    "unique": "255asd2"
+}
+```
+
+And it should reply with:
+```json
+{
+    "response": "{\"id\":\"1.2\"}",
+    "kode": 1,
+    "replyTo": "255asd2"
 }
 ```
 
@@ -141,7 +194,8 @@ Example of a collection drop
     "authorization": "8a4b93a0-a6d8-4403-a44f-5cff82a537e5",
     "method": "drop",
     "database": "rose_db",
-    "collection": "Mana"
+    "collection": "Mana",
+    "unique": "Unique identifier to receive from callback."
 }
 ```
 
@@ -149,7 +203,8 @@ It should reply with:
 ```json
 {
     "response": "Successfully deleted the collection Mana",
-    "kode": 1
+    "kode": 1,
+    "replyTo": "Unique Identifier from Request"
 }
 ```
 
@@ -158,7 +213,8 @@ Example of a database drop:
 {
     "authorization": "8a4b93a0-a6d8-4403-a44f-5cff82a537e5",
     "method": "drop",
-    "database": "rose_db"
+    "database": "rose_db",
+    "unique": "Unique identifier to receive from callback."
 }
 ```
 
@@ -166,7 +222,8 @@ The expected response should be
 ```json
 {
     "response": "Successfully deleted the database rose_db",
-    "kode": 1
+    "kode": 1,
+    "replyTo": "Unique Identifier from Request"
 }
 ```
 
