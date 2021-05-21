@@ -1,4 +1,10 @@
-#### RoseDB
+# RoseDB
+[![Maintenance](https://img.shields.io/badge/Actively%20Developed%3F-Yes-green.svg)](https://GitHub.com/ShindouMihou/RoseDB/graphs/commit-activity)
+[![Build Status](https://travis-ci.com/ShindouMihou/RoseDB.svg?branch=master)](https://travis-ci.com/ShindouMihou/RoseDB)
+[![Release](https://img.shields.io/github/v/release/ShindouMihou/RoseDB)](https://github.com/ShindouMihou/RoseDB/releases)
+[![Discord](https://img.shields.io/discord/807084089013174272?logo=Discord)](https://discord.gg/9FefYq4p83)
+[![Commits](https://img.shields.io/github/last-commit/ShindouMihou/RoseDB)](https://github.com/ShindouMihou/RoseDB/commits)
+
 RoseDB, a full-fledged, simple, NoSQL database created in Java with only the basic functions; 
 this was created as a joke for me and also a shower thought about making something similar to MongoDB but simplified.
 
@@ -20,7 +26,7 @@ for example Discord bots where you cannot see what the IP, Port and Authorizatio
 
 We do have plans on increasing security in accordance to best practices but then again, this is still a joke for me.
 
-#### How to install?
+## How to install?
 
 Installation of RoseDB is simple, all you need is JDK 11 (Preferably, OpenJDK 11) and some knowledge of JSON. Here are
 the steps of installing RoseDB.
@@ -32,7 +38,7 @@ the steps of installing RoseDB.
 4. **OPTIONAL** CTRL + C (or exit) the application then head to the folder where you will find a config.json.
 5. **OPTIONAL** Configure the JSON config as you like.
 
-#### How to configure?
+## How to configure?
 
 Configuration of RoseDB is straightforward, here is an example of a configuration file.
 ```json
@@ -52,7 +58,7 @@ application makes a custom one like that.
 where RoseDB.jar is located with "/database/" added at the end).
 * **loggingLevel**: the logging level minimum that RoseDB will log (default: INFO).
 
-#### How to send requests?
+## How to send requests?
 
 Sending requests is also straightforward with the database, everything is on JSON format. 
 Also, everything is sent via webhooks which means the address to use is something like: `ws://127.0.0.1:5995`
@@ -78,9 +84,9 @@ It should reply with:
 }
 ```
 
-**ADD REQUESTS**
+**ADD AND UPDATE REQUESTS**
 
-To send a ADD request, you can do:
+* UPDATE and ADD are both the same except UPDATE uses `"method":"update"`
 ```json
 {
 "authorization": "Authorization here", 
@@ -162,13 +168,20 @@ The expected response should be
 }
 ```
 
-#### TODO
+## Image Examples
+* Collection Drop: ![collection drop](https://media.discordapp.net/attachments/731377154817916939/845257934480343040/unknown.png)
+* Database Drop: ![database drop](https://media.discordapp.net/attachments/731377154817916939/845257852083109928/unknown.png)
+* Delete Request: ![delete request](https://media.discordapp.net/attachments/731377154817916939/845258886307119144/unknown.png)
+* Add Request: ![add request](https://media.discordapp.net/attachments/731377154817916939/845258085589319690/unknown.png)
+* Get Request: ![get request](https://media.discordapp.net/attachments/731377154817916939/845258046812061736/unknown.png)
+
+## TODO
 * Create a Driver for Java
 * Create a Driver for PHP
 * Add more security features.
 * Improve code for readability.
 
-#### Credits
-* Javalin IO (javalin.io) for websockets.
+## Credits
+* Javalin IO [javalin.io](https://javalin.io) for websockets.
 * Apache Commons IO for FilenameUtils.
 * Json.Json for JSON Decoding and Encoding.
