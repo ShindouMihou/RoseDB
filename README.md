@@ -84,9 +84,9 @@ It should reply with:
 }
 ```
 
-**ADD REQUESTS**
+**ADD AND UPDATE REQUESTS**
 
-To send a ADD request, you can do:
+* UPDATE and ADD are both the same except UPDATE uses `"method":"update"`
 ```json
 {
 "authorization": "Authorization here", 
@@ -168,6 +168,13 @@ The expected response should be
 }
 ```
 
+## Image Examples
+* Collection Drop: ![collection drop](https://media.discordapp.net/attachments/731377154817916939/845257934480343040/unknown.png)
+* Database Drop: ![database drop](https://media.discordapp.net/attachments/731377154817916939/845257852083109928/unknown.png)
+* Delete Request: ![delete request](https://media.discordapp.net/attachments/731377154817916939/845258886307119144/unknown.png)
+* Add Request: ![add request](https://media.discordapp.net/attachments/731377154817916939/845258085589319690/unknown.png)
+* Get Request: ![get request](https://media.discordapp.net/attachments/731377154817916939/845258046812061736/unknown.png)
+
 ## TODO
 * Create a Driver for Java
 * Create a Driver for PHP
@@ -175,6 +182,6 @@ The expected response should be
 * Improve code for readability.
 
 ## Credits
-* Javalin IO (javalin.io) for websockets.
+* Javalin IO [javalin.io](https://javalin.io) for websockets.
 * Apache Commons IO for FilenameUtils.
 * Json.Json for JSON Decoding and Encoding.
