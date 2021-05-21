@@ -3,6 +3,7 @@ package pw.mihou.rosedb.connections;
 import io.javalin.Javalin;
 import io.javalin.websocket.WsContext;
 import org.apache.commons.io.FileUtils;
+import org.json.JSONException;
 import org.json.JSONObject;
 import pw.mihou.rosedb.RoseDB;
 import pw.mihou.rosedb.enums.Levels;
@@ -87,7 +88,14 @@ public class RoseServer {
         app.ws("/", ws -> {
             ws.onConnect(ctx -> context.put(ctx.getSessionId(), ctx));
             ws.onClose(ctx -> context.remove(ctx.getSessionId()));
-            ws.onMessage(ctx -> RoseListenerManager.execute(new JSONObject(ctx.message()), ctx));
+            ws.onMessage(ctx -> {
+                try {
+                    RoseListenerManager.execute(new JSONObject(ctx.message()), ctx);
+                } catch (JSONException e){
+                    reply(ctx, "The request was considered as invalid: " + e.getMessage(), -1);
+                    Terminal.log(Levels.DEBUG, "Received invalid JSON request: " + ctx.message() + " from " + ctx.session.getRemoteAddress().toString());
+                }
+            });
         });
 
         Terminal.log(Levels.INFO, "RoseDB is now running on port: " + port);
