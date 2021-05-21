@@ -1,4 +1,4 @@
-#### RoseDB
+# RoseDB
 RoseDB, a full-fledged, simple, NoSQL database created in Java with only the basic functions; 
 this was created as a joke for me and also a shower thought about making something similar to MongoDB but simplified.
 
@@ -20,7 +20,7 @@ for example Discord bots where you cannot see what the IP, Port and Authorizatio
 
 We do have plans on increasing security in accordance to best practices but then again, this is still a joke for me.
 
-#### How to install?
+## How to install?
 
 Installation of RoseDB is simple, all you need is JDK 11 (Preferably, OpenJDK 11) and some knowledge of JSON. Here are
 the steps of installing RoseDB.
@@ -32,7 +32,7 @@ the steps of installing RoseDB.
 4. **OPTIONAL** CTRL + C (or exit) the application then head to the folder where you will find a config.json.
 5. **OPTIONAL** Configure the JSON config as you like.
 
-#### How to configure?
+## How to configure?
 
 Configuration of RoseDB is straightforward, here is an example of a configuration file.
 ```json
@@ -52,7 +52,7 @@ application makes a custom one like that.
 where RoseDB.jar is located with "/database/" added at the end).
 * **loggingLevel**: the logging level minimum that RoseDB will log (default: INFO).
 
-#### How to send requests?
+## How to send requests?
 
 Sending requests is also straightforward with the database, everything is on JSON format. 
 Also, everything is sent via webhooks which means the address to use is something like: `ws://127.0.0.1:5995`
@@ -162,13 +162,13 @@ The expected response should be
 }
 ```
 
-#### TODO
+## TODO
 * Create a Driver for Java
 * Create a Driver for PHP
 * Add more security features.
 * Improve code for readability.
 
-#### Credits
+## Credits
 * Javalin IO (javalin.io) for websockets.
 * Apache Commons IO for FilenameUtils.
 * Json.Json for JSON Decoding and Encoding.
