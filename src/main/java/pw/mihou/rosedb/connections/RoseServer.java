@@ -54,7 +54,7 @@ public class RoseServer {
                 .filter(wsContext -> wsContext.session.isOpen())
                 .forEach(wsContext -> wsContext.send(new JSONObject()
                         .put("session", wsContext.getSessionId())
-                        .put("kode", 0).toString())), 15, 15, TimeUnit.SECONDS);
+                        .put("kode", 0).toString())), 30, 30, TimeUnit.SECONDS);
         Terminal.log(Levels.DEBUG, "Heartbeat listener is now active.");
     }
 
