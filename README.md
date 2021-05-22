@@ -53,7 +53,8 @@ Configuration of RoseDB is straightforward, here is an example of a configuratio
     "authorization": "8a4b93a0-a6d8-4403-a44f-5cff82a537e5",
     "port": 5995,
     "directory": "C:\\Users\\Owner\\Documents\\RoseDB\\Database\\",
-    "loggingLevel": "INFO"
+    "loggingLevel": "INFO",
+    "cores": 1
 }
 ```
 
@@ -64,6 +65,7 @@ application makes a custom one like that.
 * **Directory**: the directory where RoseDB will store all the data, make sure it's dedicated to RoseDB (default: directory
 where RoseDB.jar is located with "/database/" added at the end).
 * **loggingLevel**: the logging level minimum that RoseDB will log (default: INFO).
+* **Cores**: the amount of CPU cores to use for asynchronous processing.
 
 ## Wrappers
 If you want to quickly get up and running with your application then feel free to use our wrappers.
