@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter;
 public class Terminal {
 
     private static final String format = "[%s] [RoseDB: %s] > %s\n";
-    private static Levels root = Levels.ERROR;
+    public static Levels root = Levels.ERROR;
 
     public static void setLoggingLevel(Levels level) {
         root = level;

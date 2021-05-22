@@ -23,14 +23,12 @@ public class RoseDatabase {
     }
 
     public RoseCollections getCollection(String collection) {
-        if (!rosy.containsKey(collection))
-            rosy.put(collection, FileHandler.readCollection(database, collection));
-
+        rosy.putIfAbsent(collection, FileHandler.readCollection(database, collection));
         return rosy.get(collection);
     }
 
     public void removeCollection(String collection) throws IOException {
-        FileUtils.deleteDirectory(new File(String.format(RoseDB.directory + "/%s/%s/", database, collection)));
+        FileUtils.deleteDirectory(new File(RoseDB.directory + "/" + database + "/" + collection + "/"));
         this.rosy.remove(collection);
     }
 

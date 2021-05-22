@@ -1,19 +1,20 @@
 package pw.mihou.rosedb.io;
 
 
+import pw.mihou.rosedb.RoseDB;
+
 import java.util.concurrent.*;
 
 public class Scheduler {
 
-    private static final int CORE_POOL_SIZE = 1;
     private static final int MAXIMUM_POOL_SIZE = Integer.MAX_VALUE;
     private static final int KEEP_ALIVE_TIME = 120;
     private static final TimeUnit TIME_UNIT = TimeUnit.SECONDS;
 
     private static final ExecutorService executorService = new ThreadPoolExecutor(
-            CORE_POOL_SIZE, MAXIMUM_POOL_SIZE, KEEP_ALIVE_TIME, TIME_UNIT, new SynchronousQueue<>());
+            RoseDB.cores, MAXIMUM_POOL_SIZE, KEEP_ALIVE_TIME, TIME_UNIT, new SynchronousQueue<>());
     private static final ScheduledExecutorService executor =
-            Executors.newScheduledThreadPool(1);
+            Executors.newScheduledThreadPool(RoseDB.cores);
 
     public static ExecutorService getExecutorService() {
         return executorService;

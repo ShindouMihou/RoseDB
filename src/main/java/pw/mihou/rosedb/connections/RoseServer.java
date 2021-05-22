@@ -1,7 +1,7 @@
 package pw.mihou.rosedb.connections;
 
 import io.javalin.Javalin;
-import io.javalin.http.util.RateLimit;
+import io.javalin.core.compression.CompressionStrategy;
 import io.javalin.websocket.WsContext;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONException;
@@ -36,9 +36,7 @@ public class RoseServer {
     }
 
     public static RoseDatabase getDatabase(String db) {
-        if (!database.containsKey(db.toLowerCase()))
-            database.put(db.toLowerCase(), FileHandler.readDatabase(db.toLowerCase()));
-
+        database.putIfAbsent(db.toLowerCase(), FileHandler.readDatabase(db.toLowerCase()));
         return database.get(db.toLowerCase());
     }
 
@@ -75,13 +73,32 @@ public class RoseServer {
                 "  \\/_/ /_/\\/_____/\\/_____/\\/_____/\\/____/ \\/_____/");
         Terminal.log(Levels.DEBUG, "All listeners are registered.");
 
-        Javalin app = Javalin.create(config -> config.wsLogger(wsHandler -> {
-            wsHandler.onConnect(wsConnectContext -> Terminal.log(Levels.DEBUG, "Received connection from " + wsConnectContext.session.getRemoteAddress().toString()));
-            wsHandler.onClose(wsCloseContext -> Terminal.log(Levels.DEBUG, "Received closed connection from " + wsCloseContext.session.getRemoteAddress().toString() + " for " + wsCloseContext.reason()));
-            wsHandler.onMessage(ctx -> Terminal.log(Levels.DEBUG, "Received request: " + ctx.message() + " from " + ctx.session.getRemoteAddress().toString()));
-        })).events(event -> {
-            event.serverStarting(() -> Terminal.log(Levels.DEBUG, "The server is now starting at port: " + port));
-            event.serverStarted(() -> Terminal.log(Levels.DEBUG, "The server has started on port: " + port));
+        if (Terminal.root.id == Levels.DEBUG.id) {
+            Terminal.log(Levels.WARNING, "For maximum performance, we recommend turning off DEBUG mode unless needed (especially when requests can reach large sizes).");
+        }
+
+        Javalin app = Javalin.create(config -> {
+            config.compressionStrategy(CompressionStrategy.GZIP);
+            config.wsFactoryConfig(ws -> {
+                ws.getPolicy().setMaxTextMessageBufferSize(1024 * 5000);
+                ws.getPolicy().setMaxTextMessageSize(1024 * 5000);
+            });
+
+            if (Levels.DEBUG.id <= Terminal.root.id) {
+                config.wsLogger(wsHandler -> {
+                    wsHandler.onConnect(wsConnectContext -> Terminal.log(Levels.DEBUG, "Received connection from " + wsConnectContext.session.getRemoteAddress().toString()));
+                    wsHandler.onClose(wsCloseContext -> Terminal.log(Levels.DEBUG, "Received closed connection from " + wsCloseContext.session.getRemoteAddress().toString() + " for " + wsCloseContext.reason()));
+                    wsHandler.onMessage(ctx -> Terminal.log(Levels.DEBUG, "Received request: " + ctx.message() + " from " + ctx.session.getRemoteAddress().toString()));
+                });
+            }
+        });
+
+        app.events(event -> {
+            if (Levels.DEBUG.id <= Terminal.root.id) {
+                event.serverStarting(() -> Terminal.log(Levels.DEBUG, "The server is now starting at port: " + port));
+                event.serverStarted(() -> Terminal.log(Levels.DEBUG, "The server has started on port: " + port));
+            }
+
             event.serverStartFailed(() -> Terminal.log(Levels.ERROR, "The server failed to start, possibly another instance at the same port is running."));
             event.serverStopping(() -> Terminal.log(Levels.INFO, "The server is now shutting off."));
             event.serverStopped(() -> Terminal.log(Levels.INFO, "The server has successfully closed."));
@@ -97,7 +114,7 @@ public class RoseServer {
             ws.onMessage(ctx -> {
                 try {
                     RoseListenerManager.execute(new JSONObject(ctx.message()), ctx);
-                } catch (JSONException e){
+                } catch (JSONException e) {
                     reply(ctx, "The request was considered as invalid: " + e.getMessage(), -1);
                     Terminal.log(Levels.DEBUG, "Received invalid JSON request: " + ctx.message() + " from " + ctx.session.getRemoteAddress().toString());
                 }

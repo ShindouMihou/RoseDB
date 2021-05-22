@@ -19,8 +19,8 @@ public class RequestListener implements RoseListener {
             RoseServer.reply(context, "Missing parameters either: [identifier], [database], [collection]", unique, -1);
         } else {
             RoseServer.getDatabase(request.getString("database")).getCollection(request.getString("collection"))
-                    .get(request.getString("identifier")).ifPresentOrElse(roseEntity -> RoseServer.reply(context, roseEntity.get(), unique, 1),
-                    () -> RoseServer.reply(context, "No results.", unique,0));
+                    .get(request.getString("identifier")).ifPresentOrElse(roseEntity -> RoseServer.reply(context, roseEntity, unique, 1),
+                    () -> RoseServer.reply(context, "No results.", unique, 0));
         }
     }
 }
