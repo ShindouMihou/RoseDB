@@ -61,7 +61,7 @@ Configuration of RoseDB is straightforward, here is an example of a configuratio
   "directory": "C:\\Users\\Owner\\Documents\\RoseDB\\Database\\",
   "heartbeatIntervalSeconds": 30,
   "preload": true,
-  "loggingLevel": "DEBUG"
+  "loggingLevel": "INFO"
 }
 ```
 
