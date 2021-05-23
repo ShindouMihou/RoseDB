@@ -68,7 +68,7 @@ public class RoseServer {
                 .filter(wsContext -> wsContext.session.isOpen())
                 .forEach(wsContext -> wsContext.send(new JSONObject()
                         .put("session", wsContext.getSessionId())
-                        .put("kode", 0).toString())), 30, 30, TimeUnit.SECONDS);
+                        .put("kode", 0).toString())), RoseDB.heartbeat, RoseDB.heartbeat, TimeUnit.SECONDS);
         Terminal.log(Levels.DEBUG, "Heartbeat listener is now active.");
     }
 
@@ -118,6 +118,7 @@ public class RoseServer {
 
         Runtime.getRuntime().addShutdownHook(new Thread(app::stop));
         Runtime.getRuntime().addShutdownHook(new Thread(FileHandler::executeFinalRuntime));
+        Runtime.getRuntime().addShutdownHook(new Thread(Scheduler::shutdown));
 
         Terminal.log(Levels.DEBUG, "All events and handlers are now ready.");
 

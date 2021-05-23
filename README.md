@@ -59,6 +59,7 @@ Configuration of RoseDB is straightforward, here is an example of a configuratio
   "updateChecker": true,
   "maxTextMessageSizeMB": 5,
   "directory": "C:\\Users\\Owner\\Documents\\RoseDB\\Database\\",
+  "heartbeatIntervalSeconds": 30,
   "preload": true,
   "loggingLevel": "DEBUG"
 }
@@ -76,6 +77,7 @@ where RoseDB.jar is located with "/database/" added at the end).
 * **maxTextMessageSizeMB**: the maximum megabytes size of message you can receive (recommended around 5-12 MB).
 * **maxTextMessageBufferSizeMB**: similar to the one above.
 * **updateChecker**: whether to check for updates every 12 hours for new versions.
+* **heartbeatIntervalSeconds**: the interval seconds when the server should send a heartbeat to all clients, preventing them from timing out. (min: 25 seconds, max: 300 seconds)
 * **configVersion**: do not touch, it is used to check whether your configuration file has the latest configurable options.
 
 ## Wrappers

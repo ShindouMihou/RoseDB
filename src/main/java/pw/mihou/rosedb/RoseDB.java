@@ -23,9 +23,10 @@ public class RoseDB {
     public static int cores;
     public static boolean preload;
     public static int buffer;
+    public static int heartbeat;
     public static int size;
 
-    public static void main(String[] args) throws URISyntaxException, InterruptedException {
+    public static void main(String[] args) throws URISyntaxException {
         System.out.println(" ______  ______  ______  ______  _____   ______    \n" +
                 "/\\  == \\/\\  __ \\/\\  ___\\/\\  ___\\/\\  __-./\\  == \\   \n" +
                 "\\ \\  __<\\ \\ \\/\\ \\ \\___  \\ \\  __\\\\ \\ \\/\\ \\ \\  __<   \n" +
@@ -44,6 +45,7 @@ public class RoseDB {
                     .put("preload", true)
                     .put("maxTextMessageBufferSizeMB", 5)
                     .put("maxTextMessageSizeMB", 5)
+                    .put("heartbeatIntervalSeconds", 30)
                     .put("configVersion", UpdateChecker.CONFIG_VERSION)
                     .toString()).join();
         }
@@ -66,6 +68,14 @@ public class RoseDB {
             preload = config.getBoolean("preload");
             buffer = config.getInt("maxTextMessageBufferSizeMB");
             size = config.getInt("maxTextMessageSizeMB");
+            heartbeat = config.getInt("heartbeatIntervalSeconds");
+
+            if(heartbeat > 300 || heartbeat < 25){
+                Terminal.log(Levels.ERROR, "Minimum heartbeat interval should be at 25 seconds to prevent overloading clients.");
+                Terminal.log(Levels.ERROR, "Maximum heartbeat interval should be at 300 seconds to prevent clients from timeout.");
+                Terminal.log(Levels.ERROR, "Please change the value on config.json, we recommend keeping it within 25-300 seconds.");
+                return;
+            }
 
             if(buffer > 1024 || size > 1024){
                 Terminal.log(Levels.ERROR, "Maximum buffer and size for text message must not exceed 1024 MB.");
@@ -98,6 +108,9 @@ public class RoseDB {
         } catch (JSONException e){
             Terminal.log(Levels.ERROR, e.getMessage());
             Terminal.log(Levels.ERROR, "An error from this side is caused by a misconfiguration of config.json, please fix your config.json.");
+        } catch (ArithmeticException e){
+            Terminal.log(Levels.ERROR, e.getMessage());
+            Terminal.log(Levels.ERROR, "If this exception was thrown at the start, please check your config.json whether everything meets 32 bit integer limit.");
         }
 
     }
@@ -127,6 +140,7 @@ public class RoseDB {
                 .put("preload", true)
                 .put("maxTextMessageBufferSizeMB", original.isNull("maxTextMessageBufferSizeMB") ? 5 : original.getInt("maxTextMessageBufferSizeMB"))
                 .put("maxTextMessageSizeMB", original.isNull("maxTextMessageSizeMB") ? 5 : original.getInt("maxTextMessageSizeMB"))
+                .put("heartbeatIntervalSeconds", original.isNull("heartbeatIntervalSeconds") ? 30 : original.getInt("heartbeatIntervalSeconds"))
                 .put("configVersion", UpdateChecker.CONFIG_VERSION);
     }
 
