@@ -5,6 +5,7 @@ import org.json.JSONObject;
 import pw.mihou.rosedb.connections.RoseServer;
 import pw.mihou.rosedb.enums.Levels;
 import pw.mihou.rosedb.io.FileHandler;
+import pw.mihou.rosedb.io.Scheduler;
 import pw.mihou.rosedb.utility.Terminal;
 import pw.mihou.rosedb.utility.UpdateChecker;
 
@@ -12,6 +13,7 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 public class RoseDB {
 
@@ -58,11 +60,16 @@ public class RoseDB {
                 }
             }
 
+            if(config.getBoolean("updateChecker")){
+                startUpdateChecker();
+            }
+
             if (new File(directory).canWrite() && new File(directory).canRead()) {
                 // We are moving original setting of root level here, we want errors to be logged for startup.
                 Terminal.setLoggingLevel(rootLevel(Optional.ofNullable(config.getString("loggingLevel"))
                         .orElse("INFO")));
                 RoseServer.run(port);
+
             } else {
                 Terminal.log(Levels.ERROR, "Rose cannot write on read or read on " + directory);
             }
@@ -71,6 +78,15 @@ public class RoseDB {
             Terminal.log(Levels.ERROR, "An error from this side is caused by a misconfiguration of config.json, please fix your config.json.");
         }
 
+    }
+
+    private static void startUpdateChecker(){
+        Scheduler.schedule(() -> {
+            boolean update = UpdateChecker.check();
+            if(update){
+                Terminal.log(Levels.INFO, "There is a newer version of RoseDB available, please update on https://github.com/ShindouMihou/RoseDB/releases");
+            }
+        }, 0, 12, TimeUnit.HOURS);
     }
 
     public static Levels rootLevel(String configValue) {
