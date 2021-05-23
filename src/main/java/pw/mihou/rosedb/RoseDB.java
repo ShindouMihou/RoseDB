@@ -25,7 +25,12 @@ public class RoseDB {
     public static int buffer;
     public static int size;
 
-    public static void main(String[] args) throws URISyntaxException {
+    public static void main(String[] args) throws URISyntaxException, InterruptedException {
+        System.out.println(" ______  ______  ______  ______  _____   ______    \n" +
+                "/\\  == \\/\\  __ \\/\\  ___\\/\\  ___\\/\\  __-./\\  == \\   \n" +
+                "\\ \\  __<\\ \\ \\/\\ \\ \\___  \\ \\  __\\\\ \\ \\/\\ \\ \\  __<   \n" +
+                " \\ \\_\\ \\_\\ \\_____\\/\\_____\\ \\_____\\ \\____-\\ \\_____\\ \n" +
+                "  \\/_/ /_/\\/_____/\\/_____/\\/_____/\\/____/ \\/_____/");
 
         Terminal.setLoggingLevel(Levels.ERROR);
         if (!new File("config.json").exists()) {
@@ -49,6 +54,7 @@ public class RoseDB {
             Terminal.log(Levels.INFO, "We have noticed that your config.json is outdated, we are currently going to perform a short configuration update.");
             Terminal.log(Levels.INFO, "Don't worry, there isn't anything you need to do on your side!");
             FileHandler.writeToFile("config.json", updateConfig(config).toString()).join();
+            config = new JSONObject(FileHandler.read("config.json").join());
             Terminal.log(Levels.INFO, "Configuration update was complete.");
         }
 

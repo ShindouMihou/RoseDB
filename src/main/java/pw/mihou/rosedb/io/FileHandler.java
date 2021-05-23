@@ -20,11 +20,12 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FileHandler {
 
     private static final ConcurrentLinkedQueue<RoseRequest> queue = new ConcurrentLinkedQueue<>();
-
+    private static final AtomicBoolean threadFull = new AtomicBoolean(false);
     private static final FilenameFilter filter = (dir, name) -> name.endsWith(".rose");
 
     public static CompletableFuture<String> read(String path) {
@@ -45,7 +46,7 @@ public class FileHandler {
         // We are using == 1 since we are already adding one to the queue.
         // The reason why we are doing the stream as well is because we don't want to delay the other requests.
         if (queue.stream().filter(roseRequest -> (roseRequest.identifier.equalsIgnoreCase(identifier) && roseRequest.collection.equalsIgnoreCase(collection) && roseRequest.database.equalsIgnoreCase(database))).count() == 1) {
-            writeDataAsJson();
+            write();
         }
     }
 
@@ -60,26 +61,28 @@ public class FileHandler {
         return false;
     }
 
-    private static CompletableFuture<Void> writeDataAsJson() {
-        return CompletableFuture.runAsync(() -> {
-            if(!queue.isEmpty()) {
-                // We will be polling here instead.
-                RoseRequest request = queue.poll();
-                String location = new StringBuilder(RoseDB.directory).append(File.separator).append(request.database).append(File.separator).append(request.collection)
-                        .append(File.separator).append(request.identifier).append(".rose").toString();
-
-                if (!new File(location).exists()) {
-                    writeToFile(location, request.json).join();
-                } else {
-                    read(location).thenAccept(s -> writeToFile(location, request.json)).join();
-                }
-
+    private static void write() {
+        if(!threadFull.get()) {
+            Scheduler.getExecutorService().submit(() -> {
                 if (!queue.isEmpty()) {
-                    writeDataAsJson();
-                }
-            }
+                    threadFull.set(true);
+                    // We will be polling here instead.
+                    RoseRequest request = queue.poll();
+                    String location = new StringBuilder(RoseDB.directory).append(File.separator).append(request.database).append(File.separator).append(request.collection)
+                            .append(File.separator).append(request.identifier).append(".rose").toString();
 
-        }, Scheduler.getExecutorService());
+                    if (!new File(location).exists()) {
+                        writeToFile(location, request.json).join();
+                    } else {
+                        read(location).thenAccept(s -> writeToFile(location, request.json)).join();
+                    }
+                    threadFull.set(false);
+                    if (!queue.isEmpty()) {
+                        write();
+                    }
+                }
+            });
+        }
     }
 
     public static CompletableFuture<Void> writeToFile(String path, String value) {
