@@ -38,10 +38,13 @@ public class FileHandler {
     }
 
     public static void write(String database, String collection, String identifier, String json) {
-        if (queue.isEmpty()) {
-            writeDataAsJson(new RoseRequest(database, collection, identifier, json));
-        } else {
-            queue.add(new RoseRequest(database, collection, identifier, json));
+        // This way, it actually queues the requests.
+        queue.add(new RoseRequest(database, collection, identifier, json));
+
+        // We are using == 1 since we are already adding one to the queue.
+        // The reason why we are doing the stream as well is because we don't want to delay the other requests.
+        if (queue.stream().filter(roseRequest -> (roseRequest.identifier.equalsIgnoreCase(identifier) && roseRequest.collection.equalsIgnoreCase(collection) && roseRequest.database.equalsIgnoreCase(database))).count() == 1) {
+            writeDataAsJson();
         }
     }
 
@@ -56,20 +59,25 @@ public class FileHandler {
         return false;
     }
 
-    private static CompletableFuture<Void> writeDataAsJson(RoseRequest request) {
+    private static CompletableFuture<Void> writeDataAsJson() {
         return CompletableFuture.runAsync(() -> {
-            String location = new StringBuilder(RoseDB.directory).append(File.separator).append(request.database).append(File.separator).append(request.collection)
-                    .append(File.separator).append(request.identifier).append(".rose").toString();
+            if(!queue.isEmpty()) {
+                // We will be polling here instead.
+                RoseRequest request = queue.poll();
+                String location = new StringBuilder(RoseDB.directory).append(File.separator).append(request.database).append(File.separator).append(request.collection)
+                        .append(File.separator).append(request.identifier).append(".rose").toString();
 
-            if (!new File(location).exists()) {
-                writeToFile(location, request.json);
-            } else {
-                read(location).thenAccept(s -> writeToFile(location, request.json));
+                if (!new File(location).exists()) {
+                    writeToFile(location, request.json).join();
+                } else {
+                    read(location).thenAccept(s -> writeToFile(location, request.json)).join();
+                }
+
+                if (!queue.isEmpty()) {
+                    writeDataAsJson();
+                }
             }
 
-            if (!queue.isEmpty()) {
-                writeDataAsJson(queue.poll());
-            }
         }, Scheduler.getExecutorService());
     }
 
@@ -86,7 +94,12 @@ public class FileHandler {
     public static RoseCollections readCollection(String database, String collection) {
         String location = new StringBuilder(RoseDB.directory).append(File.separator).append(database).append(File.separator).append(collection).toString();
         if (!new File(location).exists()) {
-            new File(location).mkdirs();
+            boolean mkdirs = new File(location).mkdirs();
+            if(!mkdirs){
+                Terminal.setLoggingLevel(Levels.ERROR);
+                Terminal.log(Levels.ERROR, "Failed to create folders for " + location + ", possibly we do not have permission to write.");
+                return new RoseCollections(collection, database);
+            }
         }
 
 
@@ -104,8 +117,12 @@ public class FileHandler {
     public static RoseDatabase readDatabase(String database) {
         String location = new StringBuilder(RoseDB.directory).append(File.separator).append(database).toString();
         if (!new File(location).exists()) {
-            //noinspection ResultOfMethodCallIgnored
-            new File(location).mkdirs();
+            boolean mkdirs = new File(location).mkdirs();
+            if(!mkdirs){
+                Terminal.setLoggingLevel(Levels.ERROR);
+                Terminal.log(Levels.ERROR, "Failed to create folders for " + location + ", possibly we do not have permission to write.");
+                return new RoseDatabase(database);
+            }
         }
 
         RoseDatabase data = new RoseDatabase(database);
