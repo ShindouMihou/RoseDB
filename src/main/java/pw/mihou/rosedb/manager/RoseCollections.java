@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class RoseCollections {
 
     private final Map<String, String> data = new ConcurrentHashMap<>();
-    private final String collection;
+    public final String collection;
     private final String database;
 
     public RoseCollections(String collection, String database) {
@@ -25,6 +25,10 @@ public class RoseCollections {
     public void delete(String identifier) {
         this.data.remove(identifier);
         CompletableFuture.runAsync(() -> FileHandler.delete(database, collection, identifier));
+    }
+
+    public Map<String, String> getData(){
+        return data;
     }
 
     public void add(String identifier, String json) {

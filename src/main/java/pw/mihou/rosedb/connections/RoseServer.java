@@ -4,6 +4,7 @@ import io.javalin.Javalin;
 import io.javalin.core.compression.CompressionStrategy;
 import io.javalin.websocket.WsContext;
 import org.apache.commons.io.FileUtils;
+import org.eclipse.jetty.websocket.api.MessageTooLargeException;
 import org.json.JSONException;
 import org.json.JSONObject;
 import pw.mihou.rosedb.RoseDB;
@@ -30,13 +31,20 @@ public class RoseServer {
         context.send(new JSONObject().put("response", response).put("kode", kode).toString());
     }
 
+    public static void reply(WsContext context, JSONObject response, String unique, int kode) {
+        context.send(response.put("kode", kode).put("replyTo", unique).toString());
+    }
+
     public static void reply(WsContext context, String response, String unique, int kode) {
         context.send(new JSONObject().put("response", response).put("kode", kode)
                 .put("replyTo", unique).toString());
     }
 
     public static RoseDatabase getDatabase(String db) {
-        database.putIfAbsent(db.toLowerCase(), FileHandler.readDatabase(db.toLowerCase()));
+        if(!database.containsKey(db.toLowerCase())) {
+            database.put(db.toLowerCase(), FileHandler.readDatabase(db.toLowerCase()).join());
+        }
+
         return database.get(db.toLowerCase());
     }
 
@@ -51,6 +59,7 @@ public class RoseServer {
         RoseListenerManager.register(new DeleteListener());
         RoseListenerManager.register(new UpdateListener());
         RoseListenerManager.register(new DropListener());
+        RoseListenerManager.register(new AggregateListener());
     }
 
     private static void startHeartbeat() {
@@ -64,24 +73,33 @@ public class RoseServer {
     }
 
     public static void run(int port) {
-        register();
-
         System.out.println(" ______  ______  ______  ______  _____   ______    \n" +
                 "/\\  == \\/\\  __ \\/\\  ___\\/\\  ___\\/\\  __-./\\  == \\   \n" +
                 "\\ \\  __<\\ \\ \\/\\ \\ \\___  \\ \\  __\\\\ \\ \\/\\ \\ \\  __<   \n" +
                 " \\ \\_\\ \\_\\ \\_____\\/\\_____\\ \\_____\\ \\____-\\ \\_____\\ \n" +
                 "  \\/_/ /_/\\/_____/\\/_____/\\/_____/\\/____/ \\/_____/");
+
+        register();
         Terminal.log(Levels.DEBUG, "All listeners are registered.");
 
         if (Terminal.root.id == Levels.DEBUG.id) {
             Terminal.log(Levels.WARNING, "For maximum performance, we recommend turning off DEBUG mode unless needed (especially when requests can reach large sizes).");
         }
 
+        if(RoseDB.preload){
+            Terminal.log(Levels.INFO, "Pre-caching all data ahead of time, you may disable this behavior in config.json if you don't mind performance decrease.");
+            FileHandler.preloadAll().thenAccept(unused -> Terminal.log(Levels.INFO, "All data are now pre-loaded into cache!"));
+        } else {
+            Terminal.log(Levels.WARNING, "Please note that disabling preloading will cause performance to be lower.");
+        }
+
         Javalin app = Javalin.create(config -> {
+            config.defaultContentType = "application/json";
+            config.showJavalinBanner = false;
             config.compressionStrategy(CompressionStrategy.GZIP);
             config.wsFactoryConfig(ws -> {
-                ws.getPolicy().setMaxTextMessageBufferSize(1024 * 5000);
-                ws.getPolicy().setMaxTextMessageSize(1024 * 5000);
+                ws.getPolicy().setMaxTextMessageBufferSize(RoseDB.buffer * 1024 * 1024);
+                ws.getPolicy().setMaxTextMessageSize(RoseDB.size * 1024 * 1024);
             });
 
             if (Levels.DEBUG.id <= Terminal.root.id) {
@@ -117,6 +135,9 @@ public class RoseServer {
                 } catch (JSONException e) {
                     reply(ctx, "The request was considered as invalid: " + e.getMessage(), -1);
                     Terminal.log(Levels.DEBUG, "Received invalid JSON request: " + ctx.message() + " from " + ctx.session.getRemoteAddress().toString());
+                } catch (MessageTooLargeException e){
+                    reply(ctx, "The request was canceled by force: " + e.getMessage(), -1);
+                    Terminal.log(Levels.ERROR, "Received message that was too large from" + ctx.session.getRemoteAddress().toString());
                 }
             });
         });

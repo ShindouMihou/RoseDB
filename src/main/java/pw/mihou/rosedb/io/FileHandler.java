@@ -2,6 +2,7 @@ package pw.mihou.rosedb.io;
 
 import org.apache.commons.io.FilenameUtils;
 import pw.mihou.rosedb.RoseDB;
+import pw.mihou.rosedb.connections.RoseServer;
 import pw.mihou.rosedb.enums.Levels;
 import pw.mihou.rosedb.io.entities.RoseRequest;
 import pw.mihou.rosedb.manager.RoseCollections;
@@ -24,7 +25,7 @@ public class FileHandler {
 
     private static final ConcurrentLinkedQueue<RoseRequest> queue = new ConcurrentLinkedQueue<>();
 
-    private static final FilenameFilter filter = (dir, name) -> name.toLowerCase().endsWith(".rose") && dir.isFile();
+    private static final FilenameFilter filter = (dir, name) -> name.endsWith(".rose");
 
     public static CompletableFuture<String> read(String path) {
         return CompletableFuture.supplyAsync(() -> {
@@ -91,50 +92,52 @@ public class FileHandler {
         }, Scheduler.getExecutorService());
     }
 
-    public static RoseCollections readCollection(String database, String collection) {
-        String location = new StringBuilder(RoseDB.directory).append(File.separator).append(database).append(File.separator).append(collection).toString();
-        if (!new File(location).exists()) {
-            boolean mkdirs = new File(location).mkdirs();
-            if(!mkdirs){
-                Terminal.setLoggingLevel(Levels.ERROR);
-                Terminal.log(Levels.ERROR, "Failed to create folders for " + location + ", possibly we do not have permission to write.");
-                return new RoseCollections(collection, database);
+    public static CompletableFuture<RoseCollections> readCollection(String database, String collection) {
+        return CompletableFuture.supplyAsync(() -> {
+            String location = new StringBuilder(RoseDB.directory).append(File.separator).append(database).append(File.separator).append(collection).toString();
+            if (!new File(location).exists()) {
+                boolean mkdirs = new File(location).mkdirs();
+                if(!mkdirs){
+                    Terminal.setLoggingLevel(Levels.ERROR);
+                    Terminal.log(Levels.ERROR, "Failed to create folders for " + location + ", possibly we do not have permission to write.");
+                    return new RoseCollections(collection, database);
+                }
             }
-        }
 
 
-        File[] contents = new File(location).listFiles(filter);
-        RoseCollections collections = new RoseCollections(collection, database);
+            File[] contents = new File(location).listFiles(filter);
+            RoseCollections collections = new RoseCollections(collection, database);
 
-        if (contents != null) {
-            Arrays.stream(contents)
-                    .forEach(file -> read(file.getPath()).thenAccept(s ->
-                            collections.cache(FilenameUtils.getBaseName(file.getName()), s)));
-        }
-        return collections;
+            if (contents != null) {
+                Arrays.stream(contents).forEach(file -> collections.cache(FilenameUtils.getBaseName(file.getName()), read(file.getPath()).join()));
+            }
+            return collections;
+        });
     }
 
-    public static RoseDatabase readDatabase(String database) {
-        String location = new StringBuilder(RoseDB.directory).append(File.separator).append(database).toString();
-        if (!new File(location).exists()) {
-            boolean mkdirs = new File(location).mkdirs();
-            if(!mkdirs){
-                Terminal.setLoggingLevel(Levels.ERROR);
-                Terminal.log(Levels.ERROR, "Failed to create folders for " + location + ", possibly we do not have permission to write.");
-                return new RoseDatabase(database);
+    public static CompletableFuture<RoseDatabase> readDatabase(String database) {
+        return CompletableFuture.supplyAsync(() -> {
+            String location = new StringBuilder(RoseDB.directory).append(File.separator).append(database).toString();
+            if (!new File(location).exists()) {
+                boolean mkdirs = new File(location).mkdirs();
+                if(!mkdirs){
+                    Terminal.setLoggingLevel(Levels.ERROR);
+                    Terminal.log(Levels.ERROR, "Failed to create folders for " + location + ", possibly we do not have permission to write.");
+                    return new RoseDatabase(database);
+                }
             }
-        }
 
-        RoseDatabase data = new RoseDatabase(database);
-        File[] contents = new File(location).listFiles();
+            RoseDatabase data = new RoseDatabase(database);
+            File[] contents = new File(location).listFiles();
 
-        if (contents != null) {
-            Arrays.stream(contents).filter(File::isDirectory)
-                    .forEachOrdered(file -> data.cache(FilenameUtils.getBaseName(file.getName()),
-                            readCollection(database, FilenameUtils.getBaseName(file.getName()))));
-        }
+            if (contents != null) {
+                Arrays.stream(contents).filter(File::isDirectory)
+                        .forEachOrdered(file -> data.cache(FilenameUtils.getBaseName(file.getName()),
+                                readCollection(database, FilenameUtils.getBaseName(file.getName())).join()));
+            }
 
-        return data;
+            return data;
+        });
     }
 
     public static Optional<String> readData(String database, String collection, String identifier) {
@@ -144,6 +147,17 @@ public class FileHandler {
             return Optional.empty();
 
         return Optional.of(read(location).join());
+    }
+
+    public static CompletableFuture<Void> preloadAll(){
+        return CompletableFuture.runAsync(() -> {
+            File[] contents = new File(RoseDB.directory).listFiles();
+
+            if (contents != null) {
+                Arrays.stream(contents).filter(File::isDirectory)
+                        .forEachOrdered(file -> RoseServer.getDatabase(FilenameUtils.getBaseName(file.getName())));
+            }
+        });
     }
 
 }

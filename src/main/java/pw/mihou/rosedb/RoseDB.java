@@ -17,10 +17,13 @@ import java.util.concurrent.TimeUnit;
 
 public class RoseDB {
 
-    public static int port = 5995;
+    public static int port;
     public static String directory;
     public static String authorization;
-    public static int cores = 1;
+    public static int cores;
+    public static boolean preload;
+    public static int buffer;
+    public static int size;
 
     public static void main(String[] args) throws URISyntaxException {
 
@@ -33,6 +36,9 @@ public class RoseDB {
                     .put("loggingLevel", "INFO")
                     .put("cores", 1)
                     .put("updateChecker", true)
+                    .put("preload", true)
+                    .put("maxTextMessageBufferSizeMB", 5)
+                    .put("maxTextMessageSizeMB", 5)
                     .put("configVersion", UpdateChecker.CONFIG_VERSION)
                     .toString()).join();
         }
@@ -51,6 +57,16 @@ public class RoseDB {
             cores = config.getInt("cores");
             directory = config.getString("directory");
             authorization = config.getString("authorization");
+            preload = config.getBoolean("preload");
+            buffer = config.getInt("maxTextMessageBufferSizeMB");
+            size = config.getInt("maxTextMessageSizeMB");
+
+            if(buffer > 1024 || size > 1024){
+                Terminal.log(Levels.ERROR, "Maximum buffer and size for text message must not exceed 1024 MB.");
+                Terminal.log(Levels.ERROR, "Also, another warning, RoseDB isn't supposed to be used for handling large files.");
+                Terminal.log(Levels.ERROR, "Please change the value on config.json, we recommend keeping it at 5 MB to 12 MB.");
+                return;
+            }
 
             if (!new File(directory).exists()) {
                 boolean mkdirs = new File(directory).mkdirs();
@@ -102,6 +118,9 @@ public class RoseDB {
                 .put("loggingLevel", Optional.ofNullable(original.getString("loggingLevel")).orElse("INFO"))
                 .put("cores", original.isNull("cores") ? 1 : original.getInt("cores"))
                 .put("updateChecker", original.isNull("updateChecker") ? true : original.getBoolean("updateChecker"))
+                .put("preload", true)
+                .put("maxTextMessageBufferSizeMB", original.isNull("maxTextMessageBufferSizeMB") ? 5 : original.getInt("maxTextMessageBufferSizeMB"))
+                .put("maxTextMessageSizeMB", original.isNull("maxTextMessageSizeMB") ? 5 : original.getInt("maxTextMessageSizeMB"))
                 .put("configVersion", UpdateChecker.CONFIG_VERSION);
     }
 
