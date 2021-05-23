@@ -6,6 +6,7 @@ import pw.mihou.rosedb.connections.RoseServer;
 import pw.mihou.rosedb.enums.Listening;
 import pw.mihou.rosedb.manager.RoseCollections;
 import pw.mihou.rosedb.manager.entities.RoseListener;
+
 import java.util.stream.Collectors;
 
 public class AggregateListener implements RoseListener {
