@@ -19,8 +19,9 @@ to external applications and should be more than capable to process thousands of
 
 **What are you trying to achieve with this?**
 
-RoseDB's primary goal is for speed and simplicity. You can go ahead and install RoseDB, grab a driver or Postman and quickly
-get started with started with it from making requests to simply editing values of the data.
+RoseDB's primary goal is for safety and simplicity. You can go ahead and install RoseDB, grab a driver or Postman and quickly
+get started with started with it from making requests to simply editing values of the data. Everything is stored on the disk immediately
+which may make RoseDB slower than others but in exchange, your data is immediately saved.
 
 **How secure is this?**
 
@@ -53,7 +54,8 @@ Configuration of RoseDB is straightforward, here is an example of a configuratio
     "authorization": "8a4b93a0-a6d8-4403-a44f-5cff82a537e5",
     "port": 5995,
     "directory": "C:\\Users\\Owner\\Documents\\RoseDB\\Database\\",
-    "loggingLevel": "INFO"
+    "loggingLevel": "INFO",
+    "cores": 1
 }
 ```
 
@@ -64,6 +66,7 @@ application makes a custom one like that.
 * **Directory**: the directory where RoseDB will store all the data, make sure it's dedicated to RoseDB (default: directory
 where RoseDB.jar is located with "/database/" added at the end).
 * **loggingLevel**: the logging level minimum that RoseDB will log (default: INFO).
+* **Cores**: the amount of CPU cores to use for asynchronous processing.
 
 ## Wrappers
 If you want to quickly get up and running with your application then feel free to use our wrappers.
@@ -247,6 +250,8 @@ The expected response should be
 * Create a Driver for PHP
 * Add more security features.
 * Improve code for readability.
+* Data versionings (for every change, the database will rename the previous file and recreate a new one with the newer data),
+this can be rolled back and disabled.
 
 ## Credits
 * [Javalin IO](https://javalin.io) for websockets.
