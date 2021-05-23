@@ -1,16 +1,16 @@
 package pw.mihou.rosedb.manager;
 
 import pw.mihou.rosedb.io.FileHandler;
+import pw.mihou.rosedb.io.Scheduler;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RoseCollections {
 
     private final Map<String, String> data = new ConcurrentHashMap<>();
-    private final String collection;
+    public final String collection;
     private final String database;
 
     public RoseCollections(String collection, String database) {
@@ -24,12 +24,16 @@ public class RoseCollections {
 
     public void delete(String identifier) {
         this.data.remove(identifier);
-        CompletableFuture.runAsync(() -> FileHandler.delete(database, collection, identifier));
+        Scheduler.getExecutorService().submit(() -> FileHandler.delete(database, collection, identifier));
+    }
+
+    public Map<String, String> getData(){
+        return data;
     }
 
     public void add(String identifier, String json) {
         this.data.put(identifier, json);
-        CompletableFuture.runAsync(() -> FileHandler.write(database, collection, identifier, data.get(identifier)));
+        FileHandler.write(database, collection, identifier, json);
     }
 
     public Optional<String> get(String identifier) {

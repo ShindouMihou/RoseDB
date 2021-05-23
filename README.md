@@ -51,11 +51,17 @@ the steps of installing RoseDB.
 Configuration of RoseDB is straightforward, here is an example of a configuration file.
 ```json
 {
-    "authorization": "8a4b93a0-a6d8-4403-a44f-5cff82a537e5",
-    "port": 5995,
-    "directory": "C:\\Users\\Owner\\Documents\\RoseDB\\Database\\",
-    "loggingLevel": "INFO",
-    "cores": 1
+  "authorization": "aaade7eb-a61a-48ac-8217-46ef51db092d",
+  "cores": 1,
+  "maxTextMessageBufferSizeMB": 5,
+  "configVersion": "1.1",
+  "port": 5995,
+  "updateChecker": true,
+  "maxTextMessageSizeMB": 5,
+  "directory": "C:\\Users\\Owner\\Documents\\RoseDB\\Database\\",
+  "heartbeatIntervalSeconds": 30,
+  "preload": true,
+  "loggingLevel": "INFO"
 }
 ```
 
@@ -67,6 +73,12 @@ application makes a custom one like that.
 where RoseDB.jar is located with "/database/" added at the end).
 * **loggingLevel**: the logging level minimum that RoseDB will log (default: INFO).
 * **Cores**: the amount of CPU cores to use for asynchronous processing.
+* **Preload**: whether to pre-load all database and collections, recommended to keep at true since it speeds up first calls.
+* **maxTextMessageSizeMB**: the maximum megabytes size of message you can receive (recommended around 5-12 MB).
+* **maxTextMessageBufferSizeMB**: similar to the one above.
+* **updateChecker**: whether to check for updates every 12 hours for new versions.
+* **heartbeatIntervalSeconds**: the interval seconds when the server should send a heartbeat to all clients, preventing them from timing out. (min: 25 seconds, max: 300 seconds)
+* **configVersion**: do not touch, it is used to check whether your configuration file has the latest configurable options.
 
 ## Wrappers
 If you want to quickly get up and running with your application then feel free to use our wrappers.
@@ -97,6 +109,62 @@ It should reply with:
     "response": "{//entire json data here}",
     "kode": 1,
     "replyTo": "Unique identifier from request"
+}
+```
+
+**AGGREGATE REQUESTS**
+
+To send a AGGREGATE request, there are two ways:
+
+* Collection aggregation sample request:
+```json
+{
+    "authorization": "Authorization here",
+    "method":"aggregate",
+    "database":"rose_db",
+    "collection":"test",
+    "unique":"Unique Identifier Here"
+}
+```
+
+* Database aggregation sample request:
+```json
+{
+    "authorization": "Authorization here",
+    "method":"aggregate",
+    "database":"rose_db",
+    "unique":"Unique Identifier Here"
+}
+```
+
+* Collection aggregation sample response:
+```json
+{
+    "kode": 1,
+    "replyTo": "Unique Identifier Here",
+    "test": {
+        "test": "{\"item\":444}",
+        "test2": "{\"item\":2}",
+        "test3": "{\"item\":3}"
+    }
+}
+```
+
+* Database aggregation sample response:
+```json
+{
+    "kode": 1,
+    "replyTo": "Unique Identifier Here",
+    "rose_db": {
+        "test": {
+            "test": "{\"item\":444}",
+            "test2": "{\"item\":2}",
+            "test3": "{\"item\":3}"
+        },
+        "tomato": {
+            "tomato": "{\"item\":1}"
+        }
+    }
 }
 ```
 
@@ -245,6 +313,7 @@ The expected response should be
 * Delete Request: ![delete request](https://media.discordapp.net/attachments/731377154817916939/845258886307119144/unknown.png)
 * Add Request: ![add request](https://media.discordapp.net/attachments/731377154817916939/845258085589319690/unknown.png)
 * Get Request: ![get request](https://media.discordapp.net/attachments/731377154817916939/845258046812061736/unknown.png)
+* Aggregate Request ![aggregate request](https://media.discordapp.net/attachments/775601335931240459/846046876548595782/unknown.png)
 
 ## TODO
 * Create a Driver for PHP

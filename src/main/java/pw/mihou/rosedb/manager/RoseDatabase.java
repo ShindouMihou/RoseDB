@@ -6,6 +6,7 @@ import pw.mihou.rosedb.io.FileHandler;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -22,8 +23,15 @@ public class RoseDatabase {
         this.rosy.put(collection, collections);
     }
 
+    public Collection<RoseCollections> getCollections(){
+        return rosy.values();
+    }
+
     public RoseCollections getCollection(String collection) {
-        rosy.putIfAbsent(collection, FileHandler.readCollection(database, collection));
+        if(!rosy.containsKey(collection)) {
+            rosy.put(collection, FileHandler.readCollection(database, collection).join());
+        }
+
         return rosy.get(collection);
     }
 
