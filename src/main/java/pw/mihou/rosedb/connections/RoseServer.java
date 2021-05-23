@@ -117,6 +117,7 @@ public class RoseServer {
         }).start(port);
 
         Runtime.getRuntime().addShutdownHook(new Thread(app::stop));
+        Runtime.getRuntime().addShutdownHook(new Thread(FileHandler::executeFinalRuntime));
 
         Terminal.log(Levels.DEBUG, "All events and handlers are now ready.");
 

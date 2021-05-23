@@ -61,6 +61,13 @@ public class FileHandler {
         return false;
     }
 
+    public static void executeFinalRuntime(){
+        if(!queue.isEmpty()){
+            Terminal.log(Levels.DEBUG, "Executing final thread to finish remaining " + queue.size() + " write requests.");
+            write();
+        }
+    }
+
     private static void write() {
         if(!threadFull.get()) {
             Scheduler.getExecutorService().submit(() -> {
