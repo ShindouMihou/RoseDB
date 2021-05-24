@@ -19,6 +19,7 @@ import pw.mihou.rosedb.utility.Terminal;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -26,18 +27,32 @@ public class RoseServer {
 
     private static final Map<String, WsContext> context = new ConcurrentHashMap<>();
     private static final Map<String, RoseDatabase> database = new ConcurrentHashMap<>();
+    private static final Scanner scanner = new Scanner(System.in).useDelimiter("\n");
 
     public static void reply(WsContext context, String response, int kode) {
-        context.send(new JSONObject().put("response", response).put("kode", kode).toString());
+        if(context != null) {
+            context.send(new JSONObject().put("response", response).put("kode", kode).toString());
+        } else {
+            Terminal.log(Levels.INFO, new JSONObject().put("response", response).put("kode", kode).toString());
+        }
     }
 
     public static void reply(WsContext context, JSONObject response, String unique, int kode) {
-        context.send(response.put("kode", kode).put("replyTo", unique).toString());
+        if(context != null) {
+            context.send(response.put("kode", kode).put("replyTo", unique).toString());
+        } else {
+            Terminal.log(Levels.INFO, response.put("kode", kode).put("replyTo", unique).toString());
+        }
     }
 
     public static void reply(WsContext context, String response, String unique, int kode) {
-        context.send(new JSONObject().put("response", response).put("kode", kode)
-                .put("replyTo", unique).toString());
+        if(context != null) {
+            context.send(new JSONObject().put("response", response).put("kode", kode)
+                    .put("replyTo", unique).toString());
+        } else {
+            Terminal.log(Levels.INFO, new JSONObject().put("response", response).put("kode", kode)
+                    .put("replyTo", unique).toString());
+        }
     }
 
     public static RoseDatabase getDatabase(String db) {
@@ -140,6 +155,19 @@ public class RoseServer {
 
         Terminal.log(Levels.INFO, "RoseDB is now running on port: " + port);
         startHeartbeat();
+
+        while(scanner.hasNextLine()){
+            String request = scanner.nextLine();
+            try {
+                RoseListenerManager.execute(new JSONObject(request), null);
+            } catch (JSONException e) {
+                reply(null, "The request was considered as invalid: " + request, -1);
+                Terminal.log(Levels.DEBUG, "Received invalid JSON request: " + request + " from terminal.");
+            } catch (MessageTooLargeException e){
+                reply(null, "The request was canceled by force: " + e.getMessage(), -1);
+                Terminal.log(Levels.ERROR, "Received message that was too large from terminal.");
+            }
+        }
     }
 
 }
