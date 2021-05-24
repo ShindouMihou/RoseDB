@@ -49,7 +49,6 @@ public class FileHandler {
     }
 
     public static CompletableFuture<Void> compress(String path) {
-        Terminal.log(Levels.DEBUG, "Compressing: " + path);
         return read(path, false).thenAccept(s -> writeGzip(path, s));
     }
 
