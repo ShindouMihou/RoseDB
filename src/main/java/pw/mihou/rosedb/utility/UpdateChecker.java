@@ -14,7 +14,7 @@ public class UpdateChecker {
     // This will not be checked through the online version and will instead be
     // done on the application itself.
     public static final String CONFIG_VERSION = "1.2";
-    private static final String ENCODED_VERSION = URLEncoder.encode("1.0.5", StandardCharsets.UTF_8);
+    private static final String ENCODED_VERSION = URLEncoder.encode("1.0.7", StandardCharsets.UTF_8);
 
     public static boolean check(){
         try {
