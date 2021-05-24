@@ -8,9 +8,9 @@ import pw.mihou.rosedb.io.FileHandler;
 import pw.mihou.rosedb.io.Scheduler;
 import pw.mihou.rosedb.utility.Terminal;
 import pw.mihou.rosedb.utility.UpdateChecker;
-
 import java.io.File;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -53,6 +53,16 @@ public class RoseDB {
         JSONObject config = new JSONObject(FileHandler.read("config.json").join());
 
         if (config.isNull("configVersion") || !config.getString("configVersion").equals(UpdateChecker.CONFIG_VERSION)) {
+
+            if(config.isNull("configVersion") || !config.isNull("configVersion") && Double.parseDouble(config.getString("configVersion")) < 1.2){
+                FileHandler.setDirectory(config.isNull("directory") ?
+                        new File(RoseDB.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath())
+                                .getParentFile().getPath() + File.separator + "Database" + File.separator : config.getString("directory"));
+                Terminal.log(Levels.INFO, "Your configuration was detected to be from a version < 1.2 which meant the data files are utilizing an older format.");
+                Terminal.log(Levels.INFO, "We will perform a short migration to the newer file format real quick... please do not close!");
+                FileHandler.migrateAll().join();
+            }
+
             Terminal.log(Levels.INFO, "We have noticed that your config.json is outdated, we are currently going to perform a short configuration update.");
             Terminal.log(Levels.INFO, "Don't worry, there isn't anything you need to do on your side!");
             FileHandler.writeToFile("config.json", updateConfig(config).toString()).join();
@@ -100,6 +110,8 @@ public class RoseDB {
                 // We are moving original setting of root level here, we want errors to be logged for startup.
                 Terminal.setLoggingLevel(rootLevel(Optional.ofNullable(config.getString("loggingLevel"))
                         .orElse("INFO")));
+
+                FileHandler.setDirectory(directory);
                 RoseServer.run(port);
 
             } else {

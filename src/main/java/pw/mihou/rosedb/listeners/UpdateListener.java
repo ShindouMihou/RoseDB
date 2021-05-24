@@ -35,10 +35,10 @@ public class UpdateListener implements RoseListener {
                             JSONArray value = request.getJSONArray("value");
 
                             for (int i = 0; i < key.length(); i++) {
-                                object.put(key.getString(i), value.getString(i));
+                                object.put(key.getString(i), value.get(i));
                             }
                         } else {
-                            object.put(request.getString("key"), request.getString("value"));
+                            object.put(request.getString("key"), request.get("value"));
                         }
 
                         collections.add(request.getString("identifier"), object.toString());
