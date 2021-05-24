@@ -9,11 +9,8 @@ import pw.mihou.rosedb.manager.RoseCollections;
 import pw.mihou.rosedb.manager.RoseDatabase;
 import pw.mihou.rosedb.utility.Terminal;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.nio.charset.Charset;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -21,68 +18,82 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class FileHandler {
 
     private static final ConcurrentLinkedQueue<RoseRequest> queue = new ConcurrentLinkedQueue<>();
     private static final AtomicBoolean threadFull = new AtomicBoolean(false);
     private static final FilenameFilter filter = (dir, name) -> name.endsWith(".rose");
+    private static String directory;
 
-    public static CompletableFuture<String> read(String path) {
-        return CompletableFuture.supplyAsync(() -> {
-            try (BufferedReader reader = Files.newBufferedReader(Paths.get(path))) {
-                return reader.readLine();
-            } catch (final IOException e) {
-                Terminal.log(Levels.ERROR, e.getMessage());
-            }
-            return "";
-        }, Scheduler.getExecutorService());
+    public static void setDirectory(String dir) {
+        directory = dir;
     }
 
-    public static void write(String database, String collection, String identifier, String json) {
-        // This way, it actually queues the requests.
-        queue.add(new RoseRequest(database, collection, identifier, json));
+    public static CompletableFuture<Void> writeToFile(String path, String value) {
+        return write(path, value, false);
+    }
 
-        // We are using == 1 since we are already adding one to the queue.
-        // The reason why we are doing the stream as well is because we don't want to delay the other requests.
-        if (queue.stream().filter(roseRequest -> (roseRequest.identifier.equalsIgnoreCase(identifier) && roseRequest.collection.equalsIgnoreCase(collection) && roseRequest.database.equalsIgnoreCase(database))).count() == 1) {
-            write();
-        }
+    public static CompletableFuture<Void> writeGzip(String path, String value) {
+        return write(path, value, true);
+    }
+
+    public static CompletableFuture<String> read(String path) {
+        return read(path, false);
+    }
+
+    public static CompletableFuture<String> readGzip(String path) {
+        return read(path, true);
+    }
+
+    public static CompletableFuture<Void> compress(String path) {
+        Terminal.log(Levels.DEBUG, "Compressing: " + path);
+        return read(path, false).thenAccept(s -> writeGzip(path, s));
     }
 
     public static boolean delete(String database, String collection, String identifier) {
-        try {
-            queue.stream().filter(roseRequest -> roseRequest.identifier.equalsIgnoreCase(identifier)).forEachOrdered(queue::remove);
-            return Files.deleteIfExists(Paths.get(new StringBuilder(RoseDB.directory).append(File.separator).append(database).append(File.separator).append(collection)
-                    .append(File.separator).append(identifier).append(".rose").toString()));
-        } catch (IOException exception) {
-            Terminal.log(Levels.ERROR, "An exception occurred while trying to delete: " + exception.getMessage());
-        }
-        return false;
+        queue.stream().filter(roseRequest -> filter(roseRequest, database, collection, identifier)).forEachOrdered(queue::remove);
+        return delete(format(database, collection, identifier));
     }
 
-    public static void executeFinalRuntime(){
-        if(!queue.isEmpty()){
-            Terminal.log(Levels.DEBUG, "Executing final thread to finish remaining " + queue.size() + " write requests.");
+    public static String format(String database, String collection, String identifier) {
+        return new StringBuilder(directory).append(File.separator).append(database).append(File.separator).append(collection)
+                .append(File.separator).append(identifier).append(".rose").toString();
+    }
+
+    public static String format(String database, String collection) {
+        return new StringBuilder(directory).append(File.separator).append(database).append(File.separator).append(collection).toString();
+    }
+
+    public static String format(String database) {
+        return new StringBuilder(directory).append(File.separator).append(database).toString();
+    }
+
+    private static boolean filter(RoseRequest roseRequest, String database, String collection, String identifier) {
+        return (roseRequest.identifier.equalsIgnoreCase(identifier)
+                && roseRequest.collection.equalsIgnoreCase(collection)
+                && roseRequest.database.equalsIgnoreCase(database));
+    }
+
+    public static void write(String database, String collection, String identifier, String json) {
+        queue.add(new RoseRequest(database, collection, identifier, json));
+
+        if (queue.stream().filter(roseRequest -> filter(roseRequest, database, collection, identifier)).count() == 1) {
             write();
         }
     }
 
-    private static void write() {
-        if(!threadFull.get()) {
+    public static void write() {
+        if (!threadFull.get()) {
             Scheduler.getExecutorService().submit(() -> {
                 if (!queue.isEmpty()) {
                     threadFull.set(true);
-                    // We will be polling here instead.
-                    RoseRequest request = queue.poll();
-                    String location = new StringBuilder(RoseDB.directory).append(File.separator).append(request.database).append(File.separator).append(request.collection)
-                            .append(File.separator).append(request.identifier).append(".rose").toString();
 
-                    if (!new File(location).exists()) {
-                        writeToFile(location, request.json).join();
-                    } else {
-                        read(location).thenAccept(s -> writeToFile(location, request.json)).join();
-                    }
+                    RoseRequest request = queue.poll();
+                    writeGzip(format(request.database, request.collection, request.identifier), request.json).join();
+
                     threadFull.set(false);
                     if (!queue.isEmpty()) {
                         write();
@@ -92,34 +103,33 @@ public class FileHandler {
         }
     }
 
-    public static CompletableFuture<Void> writeToFile(String path, String value) {
-        return CompletableFuture.runAsync(() -> {
-            try {
-                Files.writeString(Paths.get(path), value, Charset.defaultCharset());
-            } catch (IOException e) {
-                Terminal.log(Levels.ERROR, e.getMessage());
-            }
-        }, Scheduler.getExecutorService());
+    private static boolean delete(String path) {
+        try {
+            return Files.deleteIfExists(Paths.get(path));
+        } catch (IOException exception) {
+            Terminal.log(Levels.ERROR, "An exception occurred while trying to delete: " + exception.getMessage());
+            return false;
+        }
     }
 
     public static CompletableFuture<RoseCollections> readCollection(String database, String collection) {
         return CompletableFuture.supplyAsync(() -> {
-            String location = new StringBuilder(RoseDB.directory).append(File.separator).append(database).append(File.separator).append(collection).toString();
+            String location = format(database, collection);
+
             if (!new File(location).exists()) {
                 boolean mkdirs = new File(location).mkdirs();
-                if(!mkdirs){
+                if (!mkdirs) {
                     Terminal.setLoggingLevel(Levels.ERROR);
                     Terminal.log(Levels.ERROR, "Failed to create folders for " + location + ", possibly we do not have permission to write.");
                     return new RoseCollections(collection, database);
                 }
             }
 
-
             File[] contents = new File(location).listFiles(filter);
             RoseCollections collections = new RoseCollections(collection, database);
 
             if (contents != null) {
-                Arrays.stream(contents).forEach(file -> collections.cache(FilenameUtils.getBaseName(file.getName()), read(file.getPath()).join()));
+                Arrays.stream(contents).forEach(file -> collections.cache(FilenameUtils.getBaseName(file.getName()), readGzip(file.getPath()).join()));
             }
             return collections;
         });
@@ -127,10 +137,10 @@ public class FileHandler {
 
     public static CompletableFuture<RoseDatabase> readDatabase(String database) {
         return CompletableFuture.supplyAsync(() -> {
-            String location = new StringBuilder(RoseDB.directory).append(File.separator).append(database).toString();
+            String location = format(database);
             if (!new File(location).exists()) {
                 boolean mkdirs = new File(location).mkdirs();
-                if(!mkdirs){
+                if (!mkdirs) {
                     Terminal.setLoggingLevel(Levels.ERROR);
                     Terminal.log(Levels.ERROR, "Failed to create folders for " + location + ", possibly we do not have permission to write.");
                     return new RoseDatabase(database);
@@ -151,15 +161,14 @@ public class FileHandler {
     }
 
     public static Optional<String> readData(String database, String collection, String identifier) {
-        String location = new StringBuilder(RoseDB.directory).append(File.separator).append(database).append(File.separator).append(collection)
-                .append(File.separator).append(identifier).append(".rose").toString();
+        String location = format(database, collection, identifier);
         if (!new File(location).exists())
             return Optional.empty();
 
-        return Optional.of(read(location).join());
+        return Optional.of(readGzip(location).join());
     }
 
-    public static CompletableFuture<Void> preloadAll(){
+    public static CompletableFuture<Void> preloadAll() {
         return CompletableFuture.runAsync(() -> {
             File[] contents = new File(RoseDB.directory).listFiles();
 
@@ -168,6 +177,63 @@ public class FileHandler {
                         .forEachOrdered(file -> RoseServer.getDatabase(FilenameUtils.getBaseName(file.getName())));
             }
         });
+    }
+
+    private static CompletableFuture<Void> write(String path, String value, boolean gzip) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                if (!gzip) {
+                    Files.writeString(Paths.get(path), value, StandardCharsets.UTF_8);
+                } else {
+                    try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(new File(path)), 65536)))) {
+                        writer.write(value);
+                    }
+                }
+            } catch (IOException e) {
+                Terminal.log(Levels.ERROR, e.getMessage());
+            }
+        });
+    }
+
+    public static CompletableFuture<Void> migrateAll() {
+        return CompletableFuture.runAsync(() -> {
+            File[] contents = new File(directory).listFiles();
+
+            if (contents != null) {
+                Arrays.stream(contents).filter(File::isDirectory).forEachOrdered(file -> {
+                    File[] c = new File(format(FilenameUtils.getBaseName(file.getName()))).listFiles();
+
+                    if (c != null) {
+                        Arrays.stream(c).filter(File::isDirectory)
+                                .forEachOrdered(d -> migrateCollection(FilenameUtils.getBaseName(file.getName()),
+                                        FilenameUtils.getBaseName(d.getName())));
+                    }
+                });
+            }
+        });
+    }
+
+    public static CompletableFuture<Void> migrateCollection(String database, String collection) {
+        return CompletableFuture.runAsync(() -> {
+            Terminal.log(Levels.INFO, "Attempting to migrate " + collection + " from " + database + " to newer format.");
+            File[] contents = new File(format(database, collection)).listFiles(filter);
+
+            if (contents != null) {
+                Arrays.stream(contents).forEach(file -> compress(file.getPath()));
+            }
+        });
+    }
+
+    private static CompletableFuture<String> read(String path, boolean gzip) {
+        return CompletableFuture.supplyAsync(() -> {
+            try (BufferedReader r = (!gzip ? Files.newBufferedReader(Paths.get(path)) :
+                    new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(new File(path)), 65536))))) {
+                return r.readLine();
+            } catch (IOException e) {
+                Terminal.log(Levels.ERROR, e.getMessage());
+            }
+            return "";
+        }, Scheduler.getExecutorService());
     }
 
 }
