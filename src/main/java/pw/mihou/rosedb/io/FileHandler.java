@@ -44,6 +44,18 @@ public class FileHandler {
         return read(path, false);
     }
 
+    private static CompletableFuture<String> read(String path, boolean gzip) {
+        return CompletableFuture.supplyAsync(() -> {
+            try (BufferedReader r = (!gzip ? Files.newBufferedReader(Paths.get(path)) :
+                    new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(new File(path)), 65536))))) {
+                return r.readLine();
+            } catch (IOException e) {
+                Terminal.log(Levels.ERROR, e.getMessage());
+            }
+            return "";
+        }, Scheduler.getExecutorService());
+    }
+
     public static CompletableFuture<String> readGzip(String path) {
         return read(path, true);
     }
@@ -55,6 +67,15 @@ public class FileHandler {
     public static boolean delete(String database, String collection, String identifier) {
         queue.stream().filter(roseRequest -> filter(roseRequest, database, collection, identifier)).forEachOrdered(queue::remove);
         return delete(format(database, collection, identifier));
+    }
+
+    private static boolean delete(String path) {
+        try {
+            return Files.deleteIfExists(Paths.get(path));
+        } catch (IOException exception) {
+            Terminal.log(Levels.ERROR, "An exception occurred while trying to delete: " + exception.getMessage());
+            return false;
+        }
     }
 
     public static String format(String database, String collection, String identifier) {
@@ -102,13 +123,20 @@ public class FileHandler {
         }
     }
 
-    private static boolean delete(String path) {
-        try {
-            return Files.deleteIfExists(Paths.get(path));
-        } catch (IOException exception) {
-            Terminal.log(Levels.ERROR, "An exception occurred while trying to delete: " + exception.getMessage());
-            return false;
-        }
+    private static CompletableFuture<Void> write(String path, String value, boolean gzip) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                if (!gzip) {
+                    Files.writeString(Paths.get(path), value, StandardCharsets.UTF_8);
+                } else {
+                    try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(new File(path)), 65536)))) {
+                        writer.write(value);
+                    }
+                }
+            } catch (IOException e) {
+                Terminal.log(Levels.ERROR, e.getMessage());
+            }
+        });
     }
 
     public static CompletableFuture<RoseCollections> readCollection(String database, String collection) {
@@ -178,22 +206,6 @@ public class FileHandler {
         });
     }
 
-    private static CompletableFuture<Void> write(String path, String value, boolean gzip) {
-        return CompletableFuture.runAsync(() -> {
-            try {
-                if (!gzip) {
-                    Files.writeString(Paths.get(path), value, StandardCharsets.UTF_8);
-                } else {
-                    try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(new File(path)), 65536)))) {
-                        writer.write(value);
-                    }
-                }
-            } catch (IOException e) {
-                Terminal.log(Levels.ERROR, e.getMessage());
-            }
-        });
-    }
-
     public static CompletableFuture<Void> migrateAll() {
         return CompletableFuture.runAsync(() -> {
             File[] contents = new File(directory).listFiles();
@@ -221,18 +233,6 @@ public class FileHandler {
                 Arrays.stream(contents).forEach(file -> compress(file.getPath()));
             }
         });
-    }
-
-    private static CompletableFuture<String> read(String path, boolean gzip) {
-        return CompletableFuture.supplyAsync(() -> {
-            try (BufferedReader r = (!gzip ? Files.newBufferedReader(Paths.get(path)) :
-                    new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(new File(path)), 65536))))) {
-                return r.readLine();
-            } catch (IOException e) {
-                Terminal.log(Levels.ERROR, e.getMessage());
-            }
-            return "";
-        }, Scheduler.getExecutorService());
     }
 
 }
