@@ -14,6 +14,7 @@ import pw.mihou.rosedb.utility.Terminal;
 import pw.mihou.rosedb.utility.UpdateChecker;
 import java.io.File;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;

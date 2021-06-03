@@ -83,6 +83,7 @@ where RoseDB.jar is located with "/database/" added at the end).
 ## Wrappers
 If you want to quickly get up and running with your application then feel free to use our wrappers.
 * [Rose Java Wrapper (Asynchronous)](https://github.com/ShindouMihou/Rose-Java-Driver)
+* [Python Wrapper](https://github.com/LittleCrowRevi/Python-RoseDB-Driver)
 
 ## How to send requests?
 
@@ -321,6 +322,9 @@ The expected response should be
 * Improve code for readability.
 * Data versionings (for every change, the database will rename the previous file and recreate a new one with the newer data),
 this can be rolled back and disabled.
+
+## Maintainers
+[Shindou Mihou](https://github.com/ShindouMihou)
 
 ## Credits
 * [Javalin IO](https://javalin.io) for websockets.
