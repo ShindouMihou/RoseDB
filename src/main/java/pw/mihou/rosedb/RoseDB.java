@@ -1,16 +1,19 @@
 package pw.mihou.rosedb;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.LoggerFactory;
 import pw.mihou.rosedb.connections.RoseServer;
 import pw.mihou.rosedb.enums.Levels;
 import pw.mihou.rosedb.io.FileHandler;
 import pw.mihou.rosedb.io.Scheduler;
+import pw.mihou.rosedb.utility.ColorPalette;
 import pw.mihou.rosedb.utility.Terminal;
 import pw.mihou.rosedb.utility.UpdateChecker;
 import java.io.File;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -27,13 +30,24 @@ public class RoseDB {
     public static int size;
 
     public static void main(String[] args) throws URISyntaxException {
-        System.out.println(" ______  ______  ______  ______  _____   ______    \n" +
-                "/\\  == \\/\\  __ \\/\\  ___\\/\\  ___\\/\\  __-./\\  == \\   \n" +
-                "\\ \\  __<\\ \\ \\/\\ \\ \\___  \\ \\  __\\\\ \\ \\/\\ \\ \\  __<   \n" +
-                " \\ \\_\\ \\_\\ \\_____\\/\\_____\\ \\_____\\ \\____-\\ \\_____\\ \n" +
-                "  \\/_/ /_/\\/_____/\\/_____/\\/_____/\\/____/ \\/_____/");
+        String vanity = "\tr ______  ______  ______  ______  _____   ______    \n" +
+                "\tb/\\  == \\/\\  __ \\/\\  ___\\/\\  ___\\/\\  __-./\\  == \\   \n" +
+                "\ty\\ \\  __<\\ \\ \\/\\ \\ \\___  \\ \\  __\\\\ \\ \\/\\ \\ \\  __<   \n" +
+                "\tc \\ \\_\\ \\_\\ \\_____\\/\\_____\\ \\_____\\ \\____-\\ \\_____\\ \n" +
+                "\tr  \\/_/ /_/\\/_____/\\/_____/\\/_____/\\/____/ \\/_____/n";
+        vanity = vanity.replaceAll("r", ColorPalette.ANSI_RED)
+                .replaceAll("g", ColorPalette.ANSI_GREEN)
+                .replaceAll("b", ColorPalette.ANSI_BLUE)
+                .replaceAll("y", ColorPalette.ANSI_YELLOW)
+                .replaceAll("c", ColorPalette.ANSI_CYAN)
+                .replaceAll("n", ColorPalette.ANSI_RESET);
+        System.out.println(vanity);
+        System.out.printf("Version: %s, Build: %s, Configuration Version: %s, Creator: %s\n", UpdateChecker.VERSION, UpdateChecker.BUILD, UpdateChecker.CONFIG_VERSION, "Shindou Mihou");
 
-        Terminal.setLoggingLevel(Levels.ERROR);
+        ((Logger) LoggerFactory.getLogger("io.javalin.Javalin")).setLevel(Level.ERROR);
+        ((Logger) LoggerFactory.getLogger("org.eclipse.jetty.util.log")).setLevel(Level.ERROR);
+
+        Terminal.setLoggingLevel(Level.ERROR);
         if (!new File("config.json").exists()) {
             FileHandler.writeToFile("config.json", new JSONObject()
                     .put("directory", new File(RoseDB.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile().getPath() + File.separator + "Database" + File.separator)
@@ -98,7 +112,7 @@ public class RoseDB {
                 boolean mkdirs = new File(directory).mkdirs();
 
                 if(!mkdirs){
-                    Terminal.log(Levels.ERROR, "We couldn't create the folders on " + directory);
+                    Terminal.log(Levels.ERROR, "We couldn't create the folders on {}", directory);
                 }
             }
 
@@ -113,32 +127,32 @@ public class RoseDB {
 
                 FileHandler.setDirectory(directory);
                 RoseServer.run(port);
-
             } else {
-                Terminal.log(Levels.ERROR, "Rose cannot write on read or read on " + directory);
+                Terminal.log(Levels.ERROR, "Rose cannot write on read or read on {}", directory);
             }
-        } catch (JSONException e){
-            Terminal.log(Levels.ERROR, e.getMessage());
-            Terminal.log(Levels.ERROR, "An error from this side is caused by a misconfiguration of config.json, please fix your config.json.");
-        } catch (ArithmeticException e){
-            Terminal.log(Levels.ERROR, e.getMessage());
-            Terminal.log(Levels.ERROR, "If this exception was thrown at the start, please check your config.json whether everything meets 32 bit integer limit.");
+        } catch (JSONException | ArithmeticException e){
+            Terminal.log(Levels.ERROR, "An error occurred, if this is sent from startup, " +
+                    "please check config.json otherwise please send an issue at https://github.com/ShindouMihou/RoseDB/issues." +
+                    "\nAvailable Processors (cores): {}, Free memory (MB): {}, Maximum Memory allocated to JVM (MB): {}, JDK Version: {}, JDK Vendor: {}, OS: {}, Architecture: {}, OS Version: {}" +
+                            ".\n\nError: {}",
+                    Runtime.getRuntime().availableProcessors(), (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1000 * 1000),
+                    Runtime.getRuntime().totalMemory(), System.getProperty("java.vm.version"), System.getProperty("java.vm.vendor"),
+                    System.getProperty("os.name"), System.getProperty("os.arch"), System.getProperty("os.version"), e.getMessage());
         }
 
     }
 
     private static void startUpdateChecker(){
         Scheduler.schedule(() -> {
-            boolean update = UpdateChecker.check();
-            if(update){
+            if(UpdateChecker.check()){
                 Terminal.log(Levels.INFO, "There is a newer version of RoseDB available, please update on https://github.com/ShindouMihou/RoseDB/releases");
             }
         }, 0, 12, TimeUnit.HOURS);
     }
 
-    public static Levels rootLevel(String configValue) {
-        return configValue.equalsIgnoreCase("DEBUG") ? Levels.DEBUG : (configValue.equalsIgnoreCase("INFO") ? Levels.INFO :
-                (configValue.equalsIgnoreCase("ERROR") ? Levels.ERROR : Levels.WARNING));
+    public static Level rootLevel(String configValue) {
+        return configValue.equalsIgnoreCase("DEBUG") ? Level.DEBUG : (configValue.equalsIgnoreCase("INFO") ? Level.INFO :
+                (configValue.equalsIgnoreCase("ERROR") ? Level.ERROR : Level.WARN));
     }
 
     private static JSONObject updateConfig(JSONObject original) throws URISyntaxException, JSONException {
@@ -148,7 +162,7 @@ public class RoseDB {
                 .put("authorization", Optional.ofNullable(original.getString("authorization")).orElse(UUID.randomUUID().toString()))
                 .put("loggingLevel", Optional.ofNullable(original.getString("loggingLevel")).orElse("INFO"))
                 .put("cores", original.isNull("cores") ? 1 : original.getInt("cores"))
-                .put("updateChecker", original.isNull("updateChecker") ? true : original.getBoolean("updateChecker"))
+                .put("updateChecker", original.isNull("updateChecker") || original.getBoolean("updateChecker"))
                 .put("preload", true)
                 .put("maxTextMessageBufferSizeMB", original.isNull("maxTextMessageBufferSizeMB") ? 5 : original.getInt("maxTextMessageBufferSizeMB"))
                 .put("maxTextMessageSizeMB", original.isNull("maxTextMessageSizeMB") ? 5 : original.getInt("maxTextMessageSizeMB"))

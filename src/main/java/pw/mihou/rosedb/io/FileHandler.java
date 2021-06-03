@@ -1,5 +1,6 @@
 package pw.mihou.rosedb.io;
 
+import ch.qos.logback.classic.Level;
 import org.apache.commons.io.FilenameUtils;
 import pw.mihou.rosedb.RoseDB;
 import pw.mihou.rosedb.connections.RoseServer;
@@ -99,27 +100,18 @@ public class FileHandler {
 
     public static void write(String database, String collection, String identifier, String json) {
         queue.add(new RoseRequest(database, collection, identifier, json));
-
-        if (queue.stream().filter(roseRequest -> filter(roseRequest, database, collection, identifier)).count() == 1) {
-            write();
-        }
     }
 
     public static void write() {
-        if (!threadFull.get()) {
-            Scheduler.getExecutorService().submit(() -> {
-                if (!queue.isEmpty()) {
-                    threadFull.set(true);
+        if(!threadFull.get()) {
+            threadFull.set(true);
 
-                    RoseRequest request = queue.poll();
-                    writeGzip(format(request.database, request.collection, request.identifier), request.json).join();
+            while (!queue.isEmpty()) {
+                RoseRequest request = queue.poll();
+                writeGzip(format(request.database, request.collection, request.identifier), request.json).join();
+            }
 
-                    threadFull.set(false);
-                    if (!queue.isEmpty()) {
-                        write();
-                    }
-                }
-            });
+            threadFull.set(false);
         }
     }
 
@@ -136,7 +128,7 @@ public class FileHandler {
             } catch (IOException e) {
                 Terminal.log(Levels.ERROR, e.getMessage());
             }
-        });
+        }, Scheduler.getExecutorService());
     }
 
     public static CompletableFuture<RoseCollections> readCollection(String database, String collection) {
@@ -146,7 +138,7 @@ public class FileHandler {
             if (!new File(location).exists()) {
                 boolean mkdirs = new File(location).mkdirs();
                 if (!mkdirs) {
-                    Terminal.setLoggingLevel(Levels.ERROR);
+                    Terminal.setLoggingLevel(Level.ERROR);
                     Terminal.log(Levels.ERROR, "Failed to create folders for " + location + ", possibly we do not have permission to write.");
                     return new RoseCollections(collection, database);
                 }
@@ -159,7 +151,7 @@ public class FileHandler {
                 Arrays.stream(contents).forEach(file -> collections.cache(FilenameUtils.getBaseName(file.getName()), readGzip(file.getPath()).join()));
             }
             return collections;
-        });
+        }, Scheduler.getExecutorService());
     }
 
     public static CompletableFuture<RoseDatabase> readDatabase(String database) {
@@ -168,7 +160,7 @@ public class FileHandler {
             if (!new File(location).exists()) {
                 boolean mkdirs = new File(location).mkdirs();
                 if (!mkdirs) {
-                    Terminal.setLoggingLevel(Levels.ERROR);
+                    Terminal.setLoggingLevel(Level.ERROR);
                     Terminal.log(Levels.ERROR, "Failed to create folders for " + location + ", possibly we do not have permission to write.");
                     return new RoseDatabase(database);
                 }
@@ -184,7 +176,7 @@ public class FileHandler {
             }
 
             return data;
-        });
+        }, Scheduler.getExecutorService());
     }
 
     public static Optional<String> readData(String database, String collection, String identifier) {
@@ -203,7 +195,7 @@ public class FileHandler {
                 Arrays.stream(contents).filter(File::isDirectory)
                         .forEachOrdered(file -> RoseServer.getDatabase(FilenameUtils.getBaseName(file.getName())));
             }
-        });
+        }, Scheduler.getExecutorService());
     }
 
     public static CompletableFuture<Void> migrateAll() {
@@ -221,7 +213,7 @@ public class FileHandler {
                     }
                 });
             }
-        });
+        }, Scheduler.getExecutorService());
     }
 
     public static CompletableFuture<Void> migrateCollection(String database, String collection) {

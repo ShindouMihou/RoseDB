@@ -1,21 +1,26 @@
 package pw.mihou.rosedb.manager;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import pw.mihou.rosedb.io.FileHandler;
 import pw.mihou.rosedb.io.Scheduler;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class RoseCollections {
 
-    private final Map<String, String> data = new ConcurrentHashMap<>();
+    private final LoadingCache<String, String> data;
     public final String collection;
     private final String database;
 
     public RoseCollections(String collection, String database) {
         this.collection = collection;
         this.database = database;
+        // We are returning null since Caffeine will not add null values.
+        this.data = Caffeine.newBuilder()
+                .build(key -> FileHandler.readData(database, collection, key)
+                        .orElse(null));
     }
 
     public void cache(String identifier, String json) {
@@ -23,12 +28,12 @@ public class RoseCollections {
     }
 
     public void delete(String identifier) {
-        this.data.remove(identifier);
-        Scheduler.getExecutorService().submit(() -> FileHandler.delete(database, collection, identifier));
+        this.data.invalidate(identifier);
+        Scheduler.submit(() -> FileHandler.delete(database, collection, identifier));
     }
 
     public Map<String, String> getData(){
-        return data;
+        return data.asMap();
     }
 
     public void add(String identifier, String json) {
@@ -37,10 +42,6 @@ public class RoseCollections {
     }
 
     public Optional<String> get(String identifier) {
-        if (!data.containsKey(identifier)) {
-            FileHandler.readData(database, collection, identifier).ifPresent(roseEntity -> data.put(identifier, roseEntity));
-        }
-
         return Optional.ofNullable(data.get(identifier));
     }
 
