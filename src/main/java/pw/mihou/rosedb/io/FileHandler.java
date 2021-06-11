@@ -247,33 +247,4 @@ public class FileHandler {
         });
     }
 
-    public static CompletableFuture<Void> migrateAll() {
-        return CompletableFuture.runAsync(() -> {
-            File[] contents = new File(directory).listFiles();
-
-            if (contents != null) {
-                Arrays.stream(contents).filter(File::isDirectory).forEachOrdered(file -> {
-                    File[] c = new File(format(FilenameUtils.getBaseName(file.getName()))).listFiles();
-
-                    if (c != null) {
-                        Arrays.stream(c).filter(File::isDirectory)
-                                .forEachOrdered(d -> migrateCollection(FilenameUtils.getBaseName(file.getName()),
-                                        FilenameUtils.getBaseName(d.getName())));
-                    }
-                });
-            }
-        });
-    }
-
-    public static CompletableFuture<Void> migrateCollection(String database, String collection) {
-        return CompletableFuture.runAsync(() -> {
-            Terminal.log(Levels.INFO, "Attempting to migrate " + collection + " from " + database + " to newer format.");
-            File[] contents = new File(format(database, collection)).listFiles(filter);
-
-            if (contents != null) {
-                Arrays.stream(contents).forEach(file -> compress(file.getPath()));
-            }
-        });
-    }
-
 }
