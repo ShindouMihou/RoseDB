@@ -7,9 +7,7 @@ import io.javalin.Javalin;
 import io.javalin.core.compression.CompressionStrategy;
 import io.javalin.websocket.WsContext;
 import org.apache.commons.io.FileUtils;
-import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.websocket.api.MessageTooLargeException;
-import org.eclipse.jetty.websocket.server.WebSocketServerFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 import pw.mihou.rosedb.RoseDB;
@@ -17,6 +15,7 @@ import pw.mihou.rosedb.enums.Levels;
 import pw.mihou.rosedb.io.FileHandler;
 import pw.mihou.rosedb.io.Scheduler;
 import pw.mihou.rosedb.listeners.*;
+import pw.mihou.rosedb.manager.RoseCollections;
 import pw.mihou.rosedb.manager.RoseDatabase;
 import pw.mihou.rosedb.manager.RoseListenerManager;
 import pw.mihou.rosedb.utility.Terminal;
@@ -24,6 +23,7 @@ import pw.mihou.rosedb.utility.Terminal;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -65,7 +65,7 @@ public class RoseServer {
         return database.get(db.toLowerCase());
     }
 
-    public static void removeDatabase(String db) throws IOException {
+    public static synchronized void removeDatabase(String db) throws IOException {
         database.invalidate(db.toLowerCase());
         FileUtils.deleteDirectory(new File(String.format(RoseDB.directory + "/%s/", db)));
     }
@@ -77,6 +77,7 @@ public class RoseServer {
         RoseListenerManager.register(new UpdateListener());
         RoseListenerManager.register(new DropListener());
         RoseListenerManager.register(new AggregateListener());
+        RoseListenerManager.register(new RevertListener());
     }
 
     private static void startHeartbeat() {
@@ -90,7 +91,7 @@ public class RoseServer {
     }
 
     private static void startWriter(){
-        Scheduler.schedule(FileHandler::write, 5, TimeUnit.SECONDS);
+        Scheduler.schedule(FileHandler::write, 5, 5, TimeUnit.SECONDS);
     }
 
     public static void run(int port) {
@@ -132,6 +133,31 @@ public class RoseServer {
             event.serverStopped(() -> Terminal.log(Levels.INFO, "The server has successfully closed."));
         }).start(port);
 
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> context.values().stream().filter(wsContext -> wsContext.session.isOpen())
+        .forEachOrdered(wsContext -> wsContext.session.close(4002, "RoseDB is closing."))));
+
+        if(RoseDB.versioning) {
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> database.asMap().values().forEach(roseDatabase -> roseDatabase.getCollections()
+                    .forEach(collections -> collections.getVersions().forEach((s, s2) -> {
+                        String location = new StringBuilder(".rose_versions")
+                                .append(File.separator)
+                                .append(roseDatabase.getDatabase())
+                                .append(File.separator).append(collections.collection)
+                                .append(File.separator).append(s)
+                                .append(".rose").toString();
+
+                        if (!new File(location).exists()) {
+                            boolean mkdirs = new File(location).mkdirs();
+                            if (!mkdirs) {
+                                Terminal.setLoggingLevel(Level.ERROR);
+                                Terminal.log(Levels.ERROR, "Failed to create folders for " + location + ", possibly we do not have permission to write.");
+                            }
+                        }
+
+                        FileHandler.writeGzip(location, s2);
+                    })))));
+        }
+
         Runtime.getRuntime().addShutdownHook(new Thread(app::stop));
         Runtime.getRuntime().addShutdownHook(new Thread(FileHandler::write));
         Runtime.getRuntime().addShutdownHook(new Thread(Scheduler::shutdown));
@@ -139,7 +165,12 @@ public class RoseServer {
         Terminal.log(Levels.DEBUG, "All events and handlers are now ready.");
 
         app.ws("/", ws -> {
-            ws.onConnect(ctx -> context.put(ctx.getSessionId(), ctx));
+            ws.onConnect(ctx -> {
+                if(Optional.ofNullable(ctx.header("Authorization")).orElse("").equals(RoseDB.authorization))
+                    context.put(ctx.getSessionId(), ctx);
+                else
+                    ctx.session.close(4001, "Missing or invalid Authorization header.");
+            });
             ws.onClose(ctx -> context.remove(ctx.getSessionId()));
             ws.onMessage(ctx -> {
                 try {

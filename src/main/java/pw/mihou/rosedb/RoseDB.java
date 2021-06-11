@@ -28,6 +28,7 @@ public class RoseDB {
     public static boolean preload;
     public static int buffer;
     public static int heartbeat;
+    public static boolean versioning;
     public static int size;
 
     public static void main(String[] args) throws URISyntaxException {
@@ -47,6 +48,15 @@ public class RoseDB {
 
         ((Logger) LoggerFactory.getLogger("io.javalin.Javalin")).setLevel(Level.ERROR);
         ((Logger) LoggerFactory.getLogger("org.eclipse.jetty.util.log")).setLevel(Level.ERROR);
+        System.setProperty("org.eclipse.jetty.util.log.class", "org.eclipse.jetty.util.log.StdErrLog");
+        System.setProperty("org.eclipse.jetty.LEVEL", "OFF");
+        System.setProperty("org.eclipse.jetty.util.log.announce", "false");
+        ((Logger) LoggerFactory.getLogger("io.javalin.Javalin")).setLevel(Level.ERROR);
+        ((Logger) LoggerFactory.getLogger("org.eclipse.jetty.util.log")).setLevel(Level.ERROR);
+        ((Logger) LoggerFactory.getLogger("org.eclipse.jetty")).setLevel(Level.ERROR);
+        ((Logger) LoggerFactory.getLogger("o.e.jetty.io")).setLevel(Level.ERROR);
+        ((Logger) LoggerFactory.getLogger("o.e.j.w.common")).setLevel(Level.ERROR);
+
 
         Terminal.setLoggingLevel(Level.ERROR);
         if (!new File("config.json").exists()) {
@@ -60,6 +70,7 @@ public class RoseDB {
                     .put("preload", true)
                     .put("maxTextMessageBufferSizeMB", 5)
                     .put("maxTextMessageSizeMB", 5)
+                    .put("versioning", true)
                     .put("heartbeatIntervalSeconds", 30)
                     .put("configVersion", UpdateChecker.CONFIG_VERSION)
                     .toString()).join();
@@ -94,6 +105,7 @@ public class RoseDB {
             buffer = config.getInt("maxTextMessageBufferSizeMB");
             size = config.getInt("maxTextMessageSizeMB");
             heartbeat = config.getInt("heartbeatIntervalSeconds");
+            versioning = config.getBoolean("versioning");
 
             if(heartbeat > 300 || heartbeat < 25){
                 Terminal.log(Levels.ERROR, "Minimum heartbeat interval should be at 25 seconds to prevent overloading clients.");
@@ -165,6 +177,7 @@ public class RoseDB {
                 .put("cores", original.isNull("cores") ? 1 : original.getInt("cores"))
                 .put("updateChecker", original.isNull("updateChecker") || original.getBoolean("updateChecker"))
                 .put("preload", true)
+                .put("versioning", true)
                 .put("maxTextMessageBufferSizeMB", original.isNull("maxTextMessageBufferSizeMB") ? 5 : original.getInt("maxTextMessageBufferSizeMB"))
                 .put("maxTextMessageSizeMB", original.isNull("maxTextMessageSizeMB") ? 5 : original.getInt("maxTextMessageSizeMB"))
                 .put("heartbeatIntervalSeconds", original.isNull("heartbeatIntervalSeconds") ? 30 : original.getInt("heartbeatIntervalSeconds"))

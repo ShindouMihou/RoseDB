@@ -8,6 +8,7 @@ import pw.mihou.rosedb.enums.Levels;
 import pw.mihou.rosedb.io.entities.RoseRequest;
 import pw.mihou.rosedb.manager.RoseCollections;
 import pw.mihou.rosedb.manager.RoseDatabase;
+import pw.mihou.rosedb.utility.Pair;
 import pw.mihou.rosedb.utility.Terminal;
 
 import java.io.*;
@@ -15,10 +16,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -99,15 +102,17 @@ public class FileHandler {
     }
 
     public static void write(String database, String collection, String identifier, String json) {
+        Terminal.log(Levels.DEBUG, "Added to queue: {}/{}/{}.rose: {}", database, collection, identifier, json);
         queue.add(new RoseRequest(database, collection, identifier, json));
     }
 
-    public static void write() {
+    public static synchronized void write() {
         if(!threadFull.get()) {
             threadFull.set(true);
 
             while (!queue.isEmpty()) {
                 RoseRequest request = queue.poll();
+                Terminal.log(Levels.DEBUG, "Writing {}/{}/{}.rose: {}", request.database, request.collection, request.identifier, request.json);
                 writeGzip(format(request.database, request.collection, request.identifier), request.json).join();
             }
 
@@ -115,7 +120,7 @@ public class FileHandler {
         }
     }
 
-    private static CompletableFuture<Void> write(String path, String value, boolean gzip) {
+    private static synchronized CompletableFuture<Void> write(String path, String value, boolean gzip) {
         return CompletableFuture.runAsync(() -> {
             try {
                 if (!gzip) {
@@ -152,6 +157,21 @@ public class FileHandler {
             }
             return collections;
         }, Scheduler.getExecutorService());
+    }
+
+    public static Optional<String> readVersion(String database, String collection, String identifier) {
+        String location = new StringBuilder(".rose_versions")
+                .append(File.separator)
+                .append(database)
+                .append(File.separator).append(collection)
+                .append(File.separator).append(identifier)
+                .append(".rose").toString();
+
+        if (!new File(location).exists()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(readGzip(new File(location).getPath()).join());
     }
 
     public static CompletableFuture<RoseDatabase> readDatabase(String database) {

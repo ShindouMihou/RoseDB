@@ -90,12 +90,15 @@ If you want to quickly get up and running with your application then feel free t
 Sending requests is also straightforward with the database, everything is on JSON format. 
 Also, everything is sent via webhooks which means the address to use is something like: `ws://127.0.0.1:5995`
 
+## Notice
+All requests towards RoseDB v1.1.0 must have the Authorization header which is validated at connection, this is not something
+that will be backward compatible since we want to enforce this as soon as possible.
+
 **GET REQUESTS**
 
 To send a GET request, you can do:
 ```json
 {
-    "authorization": "Authorization here",
     "method": "get",
     "database": "Database here",
     "collection": "Collection Here",
@@ -107,7 +110,7 @@ To send a GET request, you can do:
 It should reply with:
 ```json
 {
-    "response": "{//entire json data here}",
+    "response": "json",
     "kode": 1,
     "replyTo": "Unique identifier from request"
 }
@@ -120,7 +123,6 @@ To send a AGGREGATE request, there are two ways:
 * Collection aggregation sample request:
 ```json
 {
-    "authorization": "Authorization here",
     "method":"aggregate",
     "database":"rose_db",
     "collection":"test",
@@ -131,7 +133,6 @@ To send a AGGREGATE request, there are two ways:
 * Database aggregation sample request:
 ```json
 {
-    "authorization": "Authorization here",
     "method":"aggregate",
     "database":"rose_db",
     "unique":"Unique Identifier Here"
@@ -174,7 +175,6 @@ To send a AGGREGATE request, there are two ways:
 * UPDATE and ADD are both the same except UPDATE uses `"method":"update"`
 ```json
 {
-    "authorization": "Authorization here",
     "method": "add",
     "database": "Database here",
     "collection": "Collection Here",
@@ -187,7 +187,6 @@ To send a AGGREGATE request, there are two ways:
 Update also allows you to update (and add) values and keys, for example:
 ```json
 {
-    "authorization": "ca72b368-0c4a-4a73-9e4c-9e22474b359c",
     "method": "update",
     "database": "rose_db",
     "collection": "mana",
@@ -220,7 +219,6 @@ It should reply with something like:
 To send a DELETE request, you can do:
 ```json
 {
-    "authorization": "Authorization here",
     "method": "delete",
     "database": "Database here",
     "collection": "Collection Here",
@@ -241,7 +239,6 @@ It should reply with:
 Similar to UPDATE requests, you can also delete multiple or single keys from the data, for example:
 ```json
 {
-    "authorization": "ca72b368-0c4a-4a73-9e4c-9e22474b359c",
     "method": "delete",
     "database": "rose_db",
     "collection": "mana",
@@ -272,7 +269,6 @@ There are two ways for DROP requests, one is for dropping collections and the ot
 Example of a collection drop
 ```json
 {
-    "authorization": "8a4b93a0-a6d8-4403-a44f-5cff82a537e5",
     "method": "drop",
     "database": "rose_db",
     "collection": "Mana",
@@ -292,7 +288,6 @@ It should reply with:
 Example of a database drop:
 ```json
 {
-    "authorization": "8a4b93a0-a6d8-4403-a44f-5cff82a537e5",
     "method": "drop",
     "database": "rose_db",
     "unique": "Unique identifier to receive from callback."
@@ -307,6 +302,41 @@ The expected response should be
     "replyTo": "Unique Identifier from Request"
 }
 ```
+
+**Revert Request**
+You can revert an add or update request by simply sending a revert request to the server which looks like:
+```
+{
+  "method": "revert",
+  "database": "rose_db",
+  "collection": "mana",
+  "idenitifer": "revert_test",
+  "unique": "5"
+}
+```
+
+The response of this request will be the last version of the file.
+```
+{
+  "response": "{\"test\":1}",
+  "kode": 1,
+  "replyTo": "Unique ID here."
+}
+```
+
+You can also disable this feature via the config for maybe a little performance boost but I doubt it would add much, disabling the feature
+would then give out this reply to any attempt to revert:
+```
+{
+  "response": "This method is unsupported by the server.",
+  "kode": 0,
+  "replyTo": "Unique ID here"
+}
+```
+
+Limitations of revert:
+* The versions are saved on application-level cache and is dumped when the application is closed normally and not abruptly.
+* Each item is limited to one version and will be overriden each time an *ADD* or *UPDATE* request is sent that will override the item.
 
 ## Image Examples
 * Collection Drop: ![collection drop](https://media.discordapp.net/attachments/731377154817916939/845257934480343040/unknown.png)
