@@ -1,5 +1,6 @@
 package pw.mihou.rosedb.io;
 
+import ch.qos.logback.classic.Level;
 import org.apache.commons.io.FilenameUtils;
 import pw.mihou.rosedb.RoseDB;
 import pw.mihou.rosedb.connections.RoseServer;
@@ -7,6 +8,7 @@ import pw.mihou.rosedb.enums.Levels;
 import pw.mihou.rosedb.io.entities.RoseRequest;
 import pw.mihou.rosedb.manager.RoseCollections;
 import pw.mihou.rosedb.manager.RoseDatabase;
+import pw.mihou.rosedb.utility.Pair;
 import pw.mihou.rosedb.utility.Terminal;
 
 import java.io.*;
@@ -14,10 +16,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -98,32 +102,25 @@ public class FileHandler {
     }
 
     public static void write(String database, String collection, String identifier, String json) {
+        Terminal.log(Levels.DEBUG, "Added to queue: {}/{}/{}.rose: {}", database, collection, identifier, json);
         queue.add(new RoseRequest(database, collection, identifier, json));
+    }
 
-        if (queue.stream().filter(roseRequest -> filter(roseRequest, database, collection, identifier)).count() == 1) {
-            write();
+    public static synchronized void write() {
+        if(!threadFull.get()) {
+            threadFull.set(true);
+
+            while (!queue.isEmpty()) {
+                RoseRequest request = queue.poll();
+                Terminal.log(Levels.DEBUG, "Writing {}/{}/{}.rose: {}", request.database, request.collection, request.identifier, request.json);
+                writeGzip(format(request.database, request.collection, request.identifier), request.json).join();
+            }
+
+            threadFull.set(false);
         }
     }
 
-    public static void write() {
-        if (!threadFull.get()) {
-            Scheduler.getExecutorService().submit(() -> {
-                if (!queue.isEmpty()) {
-                    threadFull.set(true);
-
-                    RoseRequest request = queue.poll();
-                    writeGzip(format(request.database, request.collection, request.identifier), request.json).join();
-
-                    threadFull.set(false);
-                    if (!queue.isEmpty()) {
-                        write();
-                    }
-                }
-            });
-        }
-    }
-
-    private static CompletableFuture<Void> write(String path, String value, boolean gzip) {
+    private static synchronized CompletableFuture<Void> write(String path, String value, boolean gzip) {
         return CompletableFuture.runAsync(() -> {
             try {
                 if (!gzip) {
@@ -146,7 +143,7 @@ public class FileHandler {
             if (!new File(location).exists()) {
                 boolean mkdirs = new File(location).mkdirs();
                 if (!mkdirs) {
-                    Terminal.setLoggingLevel(Levels.ERROR);
+                    Terminal.setLoggingLevel(Level.ERROR);
                     Terminal.log(Levels.ERROR, "Failed to create folders for " + location + ", possibly we do not have permission to write.");
                     return new RoseCollections(collection, database);
                 }
@@ -159,7 +156,22 @@ public class FileHandler {
                 Arrays.stream(contents).forEach(file -> collections.cache(FilenameUtils.getBaseName(file.getName()), readGzip(file.getPath()).join()));
             }
             return collections;
-        });
+        }, Scheduler.getExecutorService());
+    }
+
+    public static Optional<String> readVersion(String database, String collection, String identifier) {
+        String location = new StringBuilder(".rose_versions")
+                .append(File.separator)
+                .append(database)
+                .append(File.separator).append(collection)
+                .append(File.separator).append(identifier)
+                .append(".rose").toString();
+
+        if (!new File(location).exists()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(readGzip(new File(location).getPath()).join());
     }
 
     public static CompletableFuture<RoseDatabase> readDatabase(String database) {
@@ -168,7 +180,7 @@ public class FileHandler {
             if (!new File(location).exists()) {
                 boolean mkdirs = new File(location).mkdirs();
                 if (!mkdirs) {
-                    Terminal.setLoggingLevel(Levels.ERROR);
+                    Terminal.setLoggingLevel(Level.ERROR);
                     Terminal.log(Levels.ERROR, "Failed to create folders for " + location + ", possibly we do not have permission to write.");
                     return new RoseDatabase(database);
                 }
@@ -184,10 +196,11 @@ public class FileHandler {
             }
 
             return data;
-        });
+        }, Scheduler.getExecutorService());
     }
 
     public static Optional<String> readData(String database, String collection, String identifier) {
+        Terminal.log(Levels.DEBUG, "Attempting to read {}/{}/{}.rose", database, collection, identifier);
         String location = format(database, collection, identifier);
         if (!new File(location).exists())
             return Optional.empty();
@@ -203,7 +216,7 @@ public class FileHandler {
                 Arrays.stream(contents).filter(File::isDirectory)
                         .forEachOrdered(file -> RoseServer.getDatabase(FilenameUtils.getBaseName(file.getName())));
             }
-        });
+        }, Scheduler.getExecutorService());
     }
 
     public static CompletableFuture<Void> migrateAll() {
@@ -221,7 +234,7 @@ public class FileHandler {
                     }
                 });
             }
-        });
+        }, Scheduler.getExecutorService());
     }
 
     public static CompletableFuture<Void> migrateCollection(String database, String collection) {
