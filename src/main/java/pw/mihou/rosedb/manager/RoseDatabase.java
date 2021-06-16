@@ -4,9 +4,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import org.apache.commons.io.FileUtils;
 import pw.mihou.rosedb.RoseDB;
-import pw.mihou.rosedb.enums.Levels;
 import pw.mihou.rosedb.io.FileHandler;
-import pw.mihou.rosedb.utility.Terminal;
 
 import java.io.File;
 import java.io.IOException;

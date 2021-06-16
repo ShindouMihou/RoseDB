@@ -21,10 +21,10 @@ public class UpdateListener implements RoseListener {
             RoseServer.reply(context, "Missing parameters either: [value], [key], [identifier], [database], [collection]", unique, -1);
         } else {
             if (request.isNull("key") && !request.isNull("value")) {
-                RoseCollections collections = RoseServer.getDatabase(request.getString("database")).getCollection(request.getString("collection"));
-                collections.add(request.getString("identifier"), request.getString("value"));
-                collections.get(request.getString("identifier")).ifPresentOrElse(roseEntity -> RoseServer.reply(context, roseEntity, unique, 1),
-                        () -> RoseServer.reply(context, "Failed to update value.", unique, 0));
+                RoseServer.reply(context, RoseServer
+                        .getDatabase(request.getString("database"))
+                        .getCollection(request.getString("collection"))
+                        .add(request.getString("identifier"), request.getString("value")), unique, 1);
             } else if (!request.isNull("key") && !request.isNull("value")) {
                 RoseCollections collections = RoseServer.getDatabase(request.getString("database")).getCollection(request.getString("collection"));
                 collections.get(request.getString("identifier")).ifPresentOrElse(roseEntity -> {

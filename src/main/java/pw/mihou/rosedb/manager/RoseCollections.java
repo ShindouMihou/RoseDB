@@ -30,7 +30,8 @@ public class RoseCollections {
                         .orElse(null));
 
         if(RoseDB.versioning) {
-            versions = Caffeine.newBuilder().expireAfterWrite(6, TimeUnit.HOURS).build(key -> FileHandler.readVersion(database, collection, key).orElse(null));
+            versions = Caffeine.newBuilder().expireAfterWrite(6, TimeUnit.HOURS).build(key ->
+                    FileHandler.readVersion(database, collection, key).orElse(null));
         }
     }
 
@@ -62,13 +63,14 @@ public class RoseCollections {
         return versions.asMap();
     }
 
-    public void add(String identifier, String json) {
+    public String add(String identifier, String json) {
         if(RoseDB.versioning && this.data.get(identifier) != null) {
             this.versions.put(identifier, this.data.get(identifier));
         }
 
         this.data.put(identifier, json);
         FileHandler.write(database, collection, identifier, json);
+        return json;
     }
 
     public Optional<String> get(String identifier) {

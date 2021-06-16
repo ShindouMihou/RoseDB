@@ -200,6 +200,7 @@ public class FileHandler {
     }
 
     public static Optional<String> readData(String database, String collection, String identifier) {
+        Terminal.log(Levels.DEBUG, "Attempting to read {}/{}/{}.rose", database, collection, identifier);
         String location = format(database, collection, identifier);
         if (!new File(location).exists())
             return Optional.empty();

@@ -23,9 +23,7 @@ public class AddListener implements RoseListener {
         } else {
             Terminal.log(Levels.DEBUG, "Request to add {} with value {}", request.getString("identifier"), request.getString("value"));
             RoseCollections collections = RoseServer.getDatabase(request.getString("database")).getCollection(request.getString("collection"));
-            collections.add(request.getString("identifier"), request.getString("value"));
-            collections.get(request.getString("identifier")).ifPresentOrElse(roseEntity -> RoseServer.reply(context, roseEntity, unique, 1),
-                    () -> RoseServer.reply(context, "Failed to update value.", unique, 0));
+            RoseServer.reply(context, collections.add(request.getString("identifier"), request.getString("value")), unique, 1);
         }
     }
 }
