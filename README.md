@@ -305,7 +305,7 @@ The expected response should be
 
 **Revert Request**
 You can revert an add or update request by simply sending a revert request to the server which looks like:
-```
+```json
 {
   "method": "revert",
   "database": "rose_db",
@@ -316,7 +316,7 @@ You can revert an add or update request by simply sending a revert request to th
 ```
 
 The response of this request will be the last version of the file.
-```
+```json
 {
   "response": "{\"test\":1}",
   "kode": 1,
@@ -326,7 +326,7 @@ The response of this request will be the last version of the file.
 
 You can also disable this feature via the config for maybe a little performance boost but I doubt it would add much, disabling the feature
 would then give out this reply to any attempt to revert:
-```
+```json
 {
   "response": "This method is unsupported by the server.",
   "kode": 0,
