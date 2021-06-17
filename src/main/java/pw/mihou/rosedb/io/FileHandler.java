@@ -8,7 +8,6 @@ import pw.mihou.rosedb.enums.Levels;
 import pw.mihou.rosedb.io.entities.RoseRequest;
 import pw.mihou.rosedb.manager.RoseCollections;
 import pw.mihou.rosedb.manager.RoseDatabase;
-import pw.mihou.rosedb.utility.Pair;
 import pw.mihou.rosedb.utility.Terminal;
 
 import java.io.*;
@@ -16,18 +15,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class FileHandler {
 
-    private static final ConcurrentLinkedQueue<RoseRequest> queue = new ConcurrentLinkedQueue<>();
+    public static final ConcurrentLinkedQueue<RoseRequest> queue = new ConcurrentLinkedQueue<>();
     private static final AtomicBoolean threadFull = new AtomicBoolean(false);
     private static final FilenameFilter filter = (dir, name) -> name.endsWith(".rose");
     private static String directory;

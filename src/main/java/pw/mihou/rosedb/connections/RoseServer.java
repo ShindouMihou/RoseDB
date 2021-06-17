@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class RoseServer {
 
@@ -67,6 +68,8 @@ public class RoseServer {
 
     public static synchronized void removeDatabase(String db) throws IOException {
         database.invalidate(db.toLowerCase());
+        FileHandler.queue.removeAll(FileHandler.queue.stream().filter(r -> r.database.equals(db))
+                .collect(Collectors.toUnmodifiableList()));
         FileUtils.deleteDirectory(new File(String.format(RoseDB.directory + "/%s/", db)));
     }
 

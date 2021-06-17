@@ -9,6 +9,7 @@ import pw.mihou.rosedb.io.FileHandler;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 public class RoseDatabase {
 
@@ -39,6 +40,8 @@ public class RoseDatabase {
 
     public void removeCollection(String collection) throws IOException {
         FileUtils.deleteDirectory(new File(RoseDB.directory + "/" + database + "/" + collection + "/"));
+        FileHandler.queue.removeAll(FileHandler.queue.stream().filter(r -> r.collection.equals(collection))
+                .collect(Collectors.toUnmodifiableList()));
         this.rosy.invalidate(collection);
     }
 
