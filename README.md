@@ -8,8 +8,10 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/shindoumihou/rosedb/badge)](https://www.codefactor.io/repository/github/shindoumihou/rosedb)
 ![GitHub](https://img.shields.io/github/license/ShindouMihou/RoseDB)
 
+RoseDB is a simple, NoSQL database that is written completely in Java containing the most basic functions that is needed for a database.
+This project was initially created as a random project for me (a shower thought) but has evolved into a learning experience for me.
+
 ## Table of Contents
-- [What is RoseDB](#what-is-rosedb)
 - [How does it work](#how-does-it-work)
 - [Goal](#goal)
 - [Security](#security)
@@ -42,21 +44,17 @@
   * [Delete Field and Fields Response](#delete-field-and-fields-response)
   * [Example of Delete Field and Fields Response](#example-of-delete-field-and-fields-response)
 - [Drop Requests](#drop-requests)
-  * [Collection Drop Request](#collection-drop-request)
-  * [Collection Drop Response](#collection-drop-response)
-  * [Collection Drop Example Response](#collection-drop-example-response)
-  * [Database Drop Request](#database-drop-request)
-  * [Database Drop Response](#database-drop-response)
-  * [Database Drop Response Example](#database-drop-response-example)
+  * [Collection Request](#collection-drop-request)
+  * [Collection Response](#collection-drop-response)
+  * [Collection Example Response](#collection-drop-example-response)
+  * [Database Request](#database-drop-request)
+  * [Database Response](#database-drop-response)
+  * [Database Example Response](#database-drop-response-example)
 - [Revert Request](#revert-request)
   * [Example](#example)
   * [Response](#response-1)
   * [Example](#example-1)
   * [Limitations](#limitations)
-
-## What is RoseDB
-RoseDB is a simple, NoSQL database that is written completely in Java containing the most basic functions that is needed for a database.
-This project was initially created as a random project for me (a shower thought) but has evolved into a learning experience for me.
 
 ## How does it work
 RoseDB works with both in-memory and file data storage, for every request it receives, it stores it on a queue and also on its cache which
@@ -65,7 +63,9 @@ and should be more than capable to process plenty of requests per second.
 
 ## Goal
 My primary goal/aim of this project is not to create the best database but a simple database that can get you up and running in literal mere seconds
-with little to no configuration at all. Not convinced, here is the procedure:
+with little to no configuration at all.
+
+Are you not convinced? Have a look at our no-configuration setup.
 1. Download the jar from Releases.
 2. Run the jar from a console: `java -jar RoseDB.jar`.
 3. Open the `config.json` and get the `Authorization` value.
@@ -80,12 +80,16 @@ Though, in my opinion, RoseDB is more suited to be used in simple applications l
 large applications that require super complicated features, after all, the main aim of RoseDB is to be as simple as possible and that involves
 replication and load balancing (future).
 
+## Requirements
+* JDK 11 (Preferably, OpenJDK 11).
+* An computer with storage, memory and a terminal.
+* A keyboard that you can type on.
+* Internet Connection (to download the JAR file, naturally).
+
 ## Installation
 
-Installation of RoseDB is simple, all you need is JDK 11 (Preferably, OpenJDK 11) and some knowledge of JSON. Here are
+Installation of RoseDB is simple, all you need is JDK 11 (Preferably, OpenJDK 11) and tier-one extreme basic knowledge of JSON. Here are
 the steps of installing RoseDB.
-
-**Steps**
 1. Download RoseDB.jar from the Releases on GitHub.
 2. Place RoseDB.jar on its dedicated, empty folder.
 3. Open Terminal or Powershell then execute the following line: `java -jar RoseDB.jar`
