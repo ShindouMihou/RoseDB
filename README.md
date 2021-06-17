@@ -10,18 +10,17 @@
 
 ## What is RoseDB?
 RoseDB is a simple, NoSQL database completely made in Java containing the basic functions that is needed for a database. 
-This was created as a joke for me and also a shower thought about making something similar to MongoDB but simplified.
+This was initially created as a joke for me and also a shower thought about making something similar to MongoDB but simplified.
 
 **How does it work?**
 
-RoseDB works by storing data on both cache and files similar to Redis and MongoDB. It utilizes webhooks to receive and send data
+RoseDB works by storing data on both cache and files similar to Redis and MongoDB. It utilizes websockets to receive and send data
 to external applications and should be more than capable to process thousands of requests per second.
 
 **What are you trying to achieve with this?**
 
-RoseDB's primary goal is for safety and simplicity. You can go ahead and install RoseDB, grab a driver or Postman and quickly
-get started with started with it from making requests to simply editing values of the data. Everything is stored on the disk immediately
-which may make RoseDB slower than others but in exchange, your data is immediately saved.
+RoseDB's primary goal is for simplicity. You can go ahead and install RoseDB, grab a driver or Postman and quickly
+get started with started with it from making requests to simply editing values of the data.
 
 **How secure is this?**
 
@@ -54,10 +53,11 @@ Configuration of RoseDB is straightforward, here is an example of a configuratio
   "authorization": "aaade7eb-a61a-48ac-8217-46ef51db092d",
   "cores": 1,
   "maxTextMessageBufferSizeMB": 5,
-  "configVersion": "1.1",
+  "configVersion": "1.2",
   "port": 5995,
   "updateChecker": true,
   "maxTextMessageSizeMB": 5,
+  "versioning": true,
   "directory": "C:\\Users\\Owner\\Documents\\RoseDB\\Database\\",
   "heartbeatIntervalSeconds": 30,
   "preload": true,
@@ -77,12 +77,13 @@ where RoseDB.jar is located with "/database/" added at the end).
 * **maxTextMessageSizeMB**: the maximum megabytes size of message you can receive (recommended around 5-12 MB).
 * **maxTextMessageBufferSizeMB**: similar to the one above.
 * **updateChecker**: whether to check for updates every 12 hours for new versions.
+* **versioning**: whether to save a backup version (revertable) of all items that are modified.
 * **heartbeatIntervalSeconds**: the interval seconds when the server should send a heartbeat to all clients, preventing them from timing out. (min: 25 seconds, max: 300 seconds)
 * **configVersion**: do not touch, it is used to check whether your configuration file has the latest configurable options.
 
 ## Wrappers
 If you want to quickly get up and running with your application then feel free to use our wrappers.
-* [Rose Java Wrapper (Asynchronous)](https://github.com/ShindouMihou/Rose-Java-Driver)
+* [Official Java Wrapper](https://github.com/ShindouMihou/Rose-Java-Driver)
 * [Python Wrapper](https://github.com/LittleCrowRevi/Python-RoseDB-Driver)
 
 ## How to send requests?
@@ -339,19 +340,33 @@ Limitations of revert:
 * Each item is limited to one version and will be overriden each time an *ADD* or *UPDATE* request is sent that will override the item.
 
 ## Image Examples
-* Collection Drop: ![collection drop](https://media.discordapp.net/attachments/731377154817916939/845257934480343040/unknown.png)
-* Database Drop: ![database drop](https://media.discordapp.net/attachments/731377154817916939/845257852083109928/unknown.png)
-* Delete Request: ![delete request](https://media.discordapp.net/attachments/731377154817916939/845258886307119144/unknown.png)
-* Add Request: ![add request](https://media.discordapp.net/attachments/731377154817916939/845258085589319690/unknown.png)
-* Get Request: ![get request](https://media.discordapp.net/attachments/731377154817916939/845258046812061736/unknown.png)
-* Aggregate Request ![aggregate request](https://media.discordapp.net/attachments/775601335931240459/846046876548595782/unknown.png)
+* Collection Drop: 
+
+![collection drop](https://media.discordapp.net/attachments/731377154817916939/845257934480343040/unknown.png)
+
+* Database Drop: 
+
+![database drop](https://media.discordapp.net/attachments/731377154817916939/845257852083109928/unknown.png)
+
+* Delete Request: 
+
+![delete request](https://media.discordapp.net/attachments/731377154817916939/845258886307119144/unknown.png)
+
+* Add Request
+
+![add request](https://media.discordapp.net/attachments/731377154817916939/845258085589319690/unknown.png)
+
+* Get Request: 
+
+![get request](https://media.discordapp.net/attachments/731377154817916939/845258046812061736/unknown.png)
+
+* Aggregate Request 
+
+![aggregate request](https://media.discordapp.net/attachments/775601335931240459/846046876548595782/unknown.png)
 
 ## TODO
-* Create a Driver for PHP
 * Add more security features.
 * Improve code for readability.
-* Data versionings (for every change, the database will rename the previous file and recreate a new one with the newer data),
-this can be rolled back and disabled.
 
 ## Maintainers
 [Shindou Mihou](https://github.com/ShindouMihou)
