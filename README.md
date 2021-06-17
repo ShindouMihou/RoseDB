@@ -8,31 +8,79 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/shindoumihou/rosedb/badge)](https://www.codefactor.io/repository/github/shindoumihou/rosedb)
 ![GitHub](https://img.shields.io/github/license/ShindouMihou/RoseDB)
 
-## What is RoseDB?
-RoseDB is a simple, NoSQL database completely made in Java containing the basic functions that is needed for a database. 
-This was initially created as a joke for me and also a shower thought about making something similar to MongoDB but simplified.
+## Table of Contents
+- [What is RoseDB](#what-is-rosedb)
+- [How does it work](#how-does-it-work)
+- [Goal](#goal)
+- [Security](#security)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Wrappers](#wrappers)
+- [Sending Requests](#sending-requests)
+  * [Notice](#notice)
+  * [Content-Type](#content-type)
+- [Get Request](#get-request)
+  * [Response](#response)
+- [Aggregate Requests](#aggregate-requests)
+  * [Collection Request](#collection-request)
+  * [Collection Response](#collection-response)
+  * [Collection Example Response](#collection-example-response)
+  * [Database Request](#database-request)
+  * [Database Response](#database-response)
+  * [Database Sample Response](#database-sample-response)
+- [Add and Update Requests](#add-and-update-requests)
+  * [Update Single Field Request](#update-single-field-request)
+  * [Update Multiple Fields Request](#update-multiple-fields-request)
+  * [Example of Multiple Fields Update Request](#example-of-multiple-fields-update-request)
+  * [Add and Update Response](#add-and-update-response)
+- [Delete Request](#delete-request)
+  * [Delete Item Request](#delete-item-request)
+  * [Delete Item Response](#delete-item-response)
+  * [Delete Item Example Response](#delete-item-example-response)
+  * [Delete Key or Field Request](#delete-key-or-field-request)
+  * [Delete Multiple Keys or Fields Request](#delete-multiple-keys-or-fields-request)
+  * [Delete Field and Fields Response](#delete-field-and-fields-response)
+  * [Example of Delete Field and Fields Response](#example-of-delete-field-and-fields-response)
+  * [Drop Requests](#drop-requests)
+  * [Collection Drop Request](#collection-drop-request)
+  * [Collection Drop Response](#collection-drop-response)
+  * [Collection Drop Example Response](#collection-drop-example-response)
+  * [Database Drop Request](#database-drop-request)
+  * [Database Drop Response](#database-drop-response)
+  * [Database Drop Response Example](#database-drop-response-example)
+- [Revert Request](#revert-request)
+  * [Example](#example)
+  * [Response](#response-1)
+  * [Example](#example-1)
+  * [Limitations](#limitations)
 
-**How does it work?**
+## What is RoseDB
+RoseDB is a simple, NoSQL database that is written completely in Java containing the most basic functions that is needed for a database.
+This project was initially created as a random project for me (a shower thought) but has evolved into a learning experience for me.
 
-RoseDB works by storing data on both cache and files similar to Redis and MongoDB. It utilizes websockets to receive and send data
-to external applications and should be more than capable to process thousands of requests per second.
+## How does it work
+RoseDB works with both in-memory and file data storage, for every request it receives, it stores it on a queue and also on its cache which
+will be saved immediately at an interval of 5 seconds to the specified directory. It utilizes websockets to receive and send data to clients
+and should be more than capable to process plenty of requests per second.
 
-**What are you trying to achieve with this?**
+## Goal
+My primary goal/aim of this project is not to create the best database but a simple database that can get you up and running in literal mere seconds
+with little to no configuration at all. Not convinced, here is the procedure:
+1. Download the jar from Releases.
+2. Run the jar from a console: `java -jar RoseDB.jar`.
+3. Open the `config.json` and get the `Authorization` value.
+4. Install one of our drivers (for example, the official Java driver) and follow the isntructions to use the driver.
 
-RoseDB's primary goal is for simplicity. You can go ahead and install RoseDB, grab a driver or Postman and quickly
-get started with started with it from making requests to simply editing values of the data.
+## Security
+RoseDB's current security features is a bit lacking, other than the Authorization header, there is currently no other security feature but
+we are focusing our attention to bringing more security features onto the application but since we are still in our very early stages,
+we are trying to get everything up and running first before focusing on security.
 
-**How secure is this?**
+Though, in my opinion, RoseDB is more suited to be used in simple applications like tiny Discord bots that is shared among friends and not 
+large applications that require super complicated features, after all, the main aim of RoseDB is to be as simple as possible and that involves
+replication and load balancing (future).
 
-The security of RoseDB as of current is lacking. It only has one security feature which is the authorization requirement or
-the authentication requirement. Authorization is required in every request to ensure that the requesting party is authorized.
-We do have plans to increasing and adding more security and flexibility but for now, we are focusing on simplicity.
-
-RoseDB, in our opinion, is better suited for simple applications like tiny Discord bots that is shared among friends containing
-only data like server prefixes and all those other simple data that you can find with a Discord bot and also the fact that it is
-hard for a Discord bot to leak its IP Address, Database Port and Authorization token unless you leak it yourself.
-
-## How to install?
+## Installation
 
 Installation of RoseDB is simple, all you need is JDK 11 (Preferably, OpenJDK 11) and some knowledge of JSON. Here are
 the steps of installing RoseDB.
@@ -45,122 +93,114 @@ the steps of installing RoseDB.
 5. **OPTIONAL** Configure the JSON config as you like.
 6. **OPTIONAL** Run the jar file again with the same line: `java -jar RoseDB.jar`
 
-## How to configure?
-
-Configuration of RoseDB is straightforward, here is an example of a configuration file.
-```json
-{
-  "authorization": "aaade7eb-a61a-48ac-8217-46ef51db092d",
-  "cores": 1,
-  "maxTextMessageBufferSizeMB": 5,
-  "configVersion": "1.2",
-  "port": 5995,
-  "updateChecker": true,
-  "maxTextMessageSizeMB": 5,
-  "versioning": true,
-  "directory": "C:\\Users\\Owner\\Documents\\RoseDB\\Database\\",
-  "heartbeatIntervalSeconds": 30,
-  "preload": true,
-  "loggingLevel": "INFO"
-}
-```
-
-* **Authorization**: the 'password' or 'secret' token to be sent with each request, it's a requirement
-for RoseDB and there is no way to disable it with the current implementation (also have no plans), by default, the
-application makes a custom one like that.
-* **Port**: the port where RoseDB will run (default: 5995).
-* **Directory**: the directory where RoseDB will store all the data, make sure it's dedicated to RoseDB (default: directory
-where RoseDB.jar is located with "/database/" added at the end).
-* **loggingLevel**: the logging level minimum that RoseDB will log (default: INFO).
-* **Cores**: the amount of CPU cores to use for asynchronous processing.
-* **Preload**: whether to pre-load all database and collections, recommended to keep at true since it speeds up first calls.
-* **maxTextMessageSizeMB**: the maximum megabytes size of message you can receive (recommended around 5-12 MB).
-* **maxTextMessageBufferSizeMB**: similar to the one above.
-* **updateChecker**: whether to check for updates every 12 hours for new versions.
-* **versioning**: whether to save a backup version (revertable) of all items that are modified.
-* **heartbeatIntervalSeconds**: the interval seconds when the server should send a heartbeat to all clients, preventing them from timing out. (min: 25 seconds, max: 300 seconds)
-* **configVersion**: do not touch, it is used to check whether your configuration file has the latest configurable options.
+## Configuration
+Configuration of RoseDB is straightforward, here is an example of a configuration file (it is on `JSON` format).
+|            FIELD           	|   TYPE  	|                                                        DESCRIPTION                                                        	|        DEFAULT VALUE        	|
+|:--------------------------:	|:-------:	|:-------------------------------------------------------------------------------------------------------------------------:	|:---------------------------:	|
+|        Authorization       	|  string 	|                          The authorization to use to validate incoming connections and requests.                          	|       A random string.      	|
+|            Cores           	| integer 	|                                      The number of cores the application should use.                                      	|              1              	|
+| maxTextMessageBufferSizeMB 	| integer 	|                          The maximum message buffer size for each message (request) received (MB)                         	|              5              	|
+|    maxTextMessageSizeMB    	| integer 	|                                  The maximum text (message/request) size to receive (MB)                                  	|              5              	|
+|            port            	| integer 	|                                              The port that RoseDB should use.                                             	|             5995            	|
+|         versioning         	| boolean 	|                 Whether RoseDB should save a backup version for all items that are modified. (Recommended)                	|             true            	|
+|           preload          	| boolean 	|                         Whether to preload all items that are saved on the database. (Recommended)                        	|             true            	|
+|        updateChecker       	| boolean 	|                      Whether to check for RoseDB updates from the maintainer's server. (Recommended)                      	|             true            	|
+|          directory         	|  string 	|                              The exact directory folder where RoseDB will save all the data.                              	| running location of the jar 	|
+|  heartbeatIntervalSeconds  	| integer 	|                 The interval seconds of when the server should send a heartbeat packet to all connections.                	|              30             	|
+|        loggingLevel        	|  string 	| The minimum level of which RoseDB should log (recommended at INFO for performance), options: INFO, WARNING, DEBUG, ERROR. 	|             INFO            	|
 
 ## Wrappers
 If you want to quickly get up and running with your application then feel free to use our wrappers.
 * [Official Java Wrapper](https://github.com/ShindouMihou/Rose-Java-Driver)
 * [Python Wrapper](https://github.com/LittleCrowRevi/Python-RoseDB-Driver)
 
-## How to send requests?
+## Sending Requests
 
 Sending requests is also straightforward with the database, everything is on JSON format. 
 Also, everything is sent via webhooks which means the address to use is something like: `ws://127.0.0.1:5995`
 
-## Notice
+### Notice
 All requests towards RoseDB v1.1.0 must have the Authorization header which is validated at connection, this is not something
 that will be backward compatible since we want to enforce this as soon as possible.
 
-**GET REQUESTS**
+### Content-Type
+All requests must be made in the Content-Type `JSON`, please keep this in mind.
 
-To send a GET request, you can do:
-```json
-{
-    "method": "get",
-    "database": "Database here",
-    "collection": "Collection Here",
-    "identifier": "Identification of the data here.",
-    "unique": "Unique identifier here, you can use this to retrieve callback"
-}
-```
+## Get Request
+The `method` field for this must be `get`.
 
-It should reply with:
-```json
-{
-    "response": "json",
-    "kode": 1,
-    "replyTo": "Unique identifier from request"
-}
-```
+| FIELD      	| TYPE   	| DESCRIPTION                                                                         	|
+|------------	|--------	|-------------------------------------------------------------------------------------	|
+| method     	| string 	| The type of request to send (GET/ADD/DELETE/REVERT/AGGREGATE/ETC)                   	|
+| database   	| string 	| The database that holds the item.                                                   	|
+| collection 	| string 	| The collection that holds the item.                                                 	|
+| identifier 	| string 	| The item's identifier name.                                                         	|
+| unique     	| string 	| The unique value to return (used for getting back exact responses from the server). 	|
 
-**AGGREGATE REQUESTS**
+### Response
 
-To send a AGGREGATE request, there are two ways:
+|   FIELD  	|   TYPE  	|                                             DESCRIPTION                                             	|
+|:--------:	|:-------:	|:---------------------------------------------------------------------------------------------------:	|
+| response 	|   json  	| The response from the server, it will always be JSON for specific methods like (GET, ADD, UPDATE).  	|
+|   kode   	| integer 	|           The server reply code (1 for success, 0 for no results, -1 for invalid request).          	|
+|  replyTo 	|  string 	|                              The unique code sent back (for callbacks).                             	|
 
-* Collection aggregation sample request:
-```json
-{
-    "method":"aggregate",
-    "database":"rose_db",
-    "collection":"test",
-    "unique":"Unique Identifier Here"
-}
-```
+## Aggregate Requests
 
-* Database aggregation sample request:
-```json
-{
-    "method":"aggregate",
-    "database":"rose_db",
-    "unique":"Unique Identifier Here"
-}
-```
+The `method` field for this must be `aggregate`.
+There are two types of aggregation requests (collection-level and database-level aggregation), both of which has a similar request.
 
-* Collection aggregation sample response:
+### Collection Request
+|   FIELD    	|  TYPE  	|                                     DESCRIPTION                                     	|
+|:----------:	|:------:	|:-----------------------------------------------------------------------------------:	|
+|   method   	| string 	|                             The type of request to send.                            	|
+|  database  	| string 	|                              The database to aggregate.                          	    |
+| collection 	| string 	|                             The collection to aggregate.                         	    |
+|   unique   	| string 	| The unique value to return (used for getting back exact responses from the server). 	|
+
+### Collection Response
+
+|          FIELD         	|     TYPE    	|                                    DESCRIPTION                                   	|
+|:----------------------:	|:-----------:	|:--------------------------------------------------------------------------------:	|
+| {{name of collection}} 	| nested json 	|                Replies with a JSON object that has all the items.                	|
+|          kode          	|   integer   	| The server reply code (1 for success, 0 for no results, -1 for invalid request). 	|
+|         replyTo        	|    string   	|                    The unique code sent back (for callbacks).                    	|
+
+### Collection Example Response
 ```json
 {
     "kode": 1,
     "replyTo": "Unique Identifier Here",
     "test": {
-        "test": "{\"item\":444}",
+        "test": "{\"item\":1}",
         "test2": "{\"item\":2}",
         "test3": "{\"item\":3}"
     }
 }
 ```
 
-* Database aggregation sample response:
+### Database Request
+|   FIELD    	|  TYPE  	|                                     DESCRIPTION                                     	|
+|:----------:	|:------:	|:-----------------------------------------------------------------------------------:	|
+|   method   	| string 	|                             The type of request to send.                            	|
+|  database  	| string 	|                              The database to aggregate.                              	|
+|   unique   	| string 	| The unique value to return (used for getting back exact responses from the server). 	|
+
+### Database Response
+|         FIELD        	|         TYPE         	|                                    DESCRIPTION                                   	|
+|:--------------------:	|:--------------------:	|:--------------------------------------------------------------------------------:	|
+| {{name of database}} 	| multiple nested json 	|                Replies with a JSON object that has all the items.                	|
+|         kode         	|        integer       	| The server reply code (1 for success, 0 for no results, -1 for invalid request). 	|
+|        replyTo       	|        string        	|                    The unique code sent back (for callbacks).                    	|
+
+### Database Sample Response
 ```json
 {
     "kode": 1,
     "replyTo": "Unique Identifier Here",
     "rose_db": {
         "test": {
-            "test": "{\"item\":444}",
+            "test": "{\"item\":1}",
             "test2": "{\"item\":2}",
             "test3": "{\"item\":3}"
         },
@@ -171,34 +211,54 @@ To send a AGGREGATE request, there are two ways:
 }
 ```
 
-**ADD AND UPDATE REQUESTS**
+## Add and Update Requests
+The `method` field for this must be `add` or `update`.
 
-* UPDATE and ADD are both the same except UPDATE uses `"method":"update"`
-```json
-{
-    "method": "add",
-    "database": "Database here",
-    "collection": "Collection Here",
-    "identifier": "Identification of the data here.",
-    "value": "{//json format of the values here}",
-    "unique": "Unique identifier here, you can use this to retrieve callback"
-}
-```
+|   FIELD    	|  TYPE  	|                                     DESCRIPTION                                     	|
+|:----------:	|:------:	|:-----------------------------------------------------------------------------------:	|
+|   method   	| string 	|                             The type of request to send.                            	|
+|  database  	| string 	|                           The database to store the item.                           	|
+| collection 	| string 	|                          The collection to store the item.                          	|
+| identifier 	| string 	|                           The identifier name of the item.                          	|
+|    value   	| json   	|                        The value of the item (JSON) required.                       	|
+|   unique   	| string 	| The unique value to return (used for getting back exact responses from the server). 	|
 
-Update also allows you to update (and add) values and keys, for example:
+### Update Single Field Request
+|   FIELD    	|  TYPE  	|                                     DESCRIPTION                                     	|
+|:----------:	|:------:	|:-----------------------------------------------------------------------------------:	|
+|   method   	| string 	|                             The type of request to send.                            	|
+|  database  	| string 	|                           The database to store the item.                           	|
+| collection 	| string 	|                          The collection to store the item.                          	|
+| identifier 	| string 	|                           The identifier name of the item.                          	|
+|     key    	| string 	|                            The name of the key to update.                           	|
+|    value   	|   any  	|                             The value to set on the key.                            	|
+|   unique   	| string 	| The unique value to return (used for getting back exact responses from the server). 	|
+
+### Update Multiple Fields Request
+|   FIELD    	|       TYPE      	|                                     DESCRIPTION                                     	|
+|:----------:	|:---------------:	|:-----------------------------------------------------------------------------------:	|
+|   method   	|      string     	|                             The type of request to send.                            	|
+|  database  	|      string     	|                           The database to store the item.                           	|
+| collection 	|      string     	|                          The collection to store the item.                          	|
+| identifier 	|      string     	|                           The identifier name of the item.                          	|
+|    keys    	| array of string 	|                           The names of the keys to update.                          	|
+|   values   	|   array of any  	|                            The values to set on the keys.                           	|
+|   unique   	|      string     	| The unique value to return (used for getting back exact responses from the server). 	|
+
+### Example of Multiple Fields Update Request
 ```json
 {
     "method": "update",
-    "database": "rose_db",
-    "collection": "mana",
-    "identifier": "application",
+    "database": "Database Name",
+    "collection": "Collection Name",
+    "identifier": "Item Name",
     "key": [
         "id",
         "code",
         "file"
     ],
     "value": [
-        "1.2",
+        "1",
         "valuable",
         "textfile"
     ],
@@ -206,29 +266,33 @@ Update also allows you to update (and add) values and keys, for example:
 }
 ```
 
-It should reply with something like:
-```json
-{
-    "response": "{\"code\":\"valuable\",\"file\":\"textfile\",\"id\":\"1.2\"}",
-    "kode": 1,
-    "replyTo": "255asd2"
-}
-```
+### Add and Update Response
+|   FIELD  	|   TYPE  	|                                    DESCRIPTION                                   	|
+|:--------:	|:-------:	|:--------------------------------------------------------------------------------:	|
+| response 	|   json  	|            Replies back with the same JSON value from the value field.           	|
+|   kode   	| integer 	| The server reply code (1 for success, 0 for no results, -1 for invalid request). 	|
+|  replyTo 	|  string 	|                    The unique code sent back (for callbacks).                    	|
 
-**DELETE REQUESTS**
+## Delete Request
+The `method` field must be `delete` for this request.
 
-To send a DELETE request, you can do:
-```json
-{
-    "method": "delete",
-    "database": "Database here",
-    "collection": "Collection Here",
-    "identifier": "Identification of the data here.",
-    "unique": "Unique identifier to receive from callback."
-}
-```
+### Delete Item Request
+|   FIELD    	|  TYPE  	|                                     DESCRIPTION                                     	|
+|:----------:	|:------:	|:-----------------------------------------------------------------------------------:	|
+|   method   	| string 	|                             The type of request to send.                            	|
+|  database  	| string 	|                           The database to store the item.                           	|
+| collection 	| string 	|                          The collection to store the item.                          	|
+| identifier 	| string 	|                      The identifier name of the item to remove.                     	|
+|   unique   	| string 	| The unique value to return (used for getting back exact responses from the server). 	|
 
-It should reply with:
+### Delete Item Response
+|   FIELD  	|   TYPE  	|                                       DESCRIPTION                                      	|
+|:--------:	|:-------:	|:--------------------------------------------------------------------------------------:	|
+| response 	|   json  	| Replies back with something among the likes of: "The item {{identifier}} was deleted." 	|
+|   kode   	| integer 	|    The server reply code (1 for success, 0 for no results, -1 for invalid request).    	|
+|  replyTo 	|  string 	|                       The unique code sent back (for callbacks).                       	|
+
+### Delete Item Example Response
 ```json
 {
     "response": "The item [identifier] was deleted.",
@@ -237,47 +301,67 @@ It should reply with:
 }
 ```
 
-Similar to UPDATE requests, you can also delete multiple or single keys from the data, for example:
-```json
-{
-    "method": "delete",
-    "database": "rose_db",
-    "collection": "mana",
-    "identifier": "application",
-    "key": [
-        "code",
-        "file"
-    ],
-    "unique": "255asd2"
-}
-```
+### Delete Key or Field Request
+|   FIELD    	|  TYPE  	|                                     DESCRIPTION                                     	|
+|:----------:	|:------:	|:-----------------------------------------------------------------------------------:	|
+|   method   	| string 	|                             The type of request to send.                            	|
+|  database  	| string 	|                           The database to store the item.                           	|
+| collection 	| string 	|                          The collection to store the item.                          	|
+| identifier 	| string 	|                      The identifier name of the item to remove.                     	|
+|     key    	| string 	|                         The key name of the field to remove.                        	|
+|   unique   	| string 	| The unique value to return (used for getting back exact responses from the server). 	|
 
-And it should reply with:
+### Delete Multiple Keys or Fields Request
+|   FIELD    	|       TYPE      	|                                     DESCRIPTION                                     	|
+|:----------:	|:---------------:	|:-----------------------------------------------------------------------------------:	|
+|   method   	|      string     	|                             The type of request to send.                            	|
+|  database  	|      string     	|                           The database to store the item.                           	|
+| collection 	|      string     	|                          The collection to store the item.                          	|
+| identifier 	|      string     	|                      The identifier name of the item to remove.                     	|
+|    keys    	| array of string 	|                        The key names of the fields to remove.                       	|
+|   unique   	|      string     	| The unique value to return (used for getting back exact responses from the server). 	|
+
+### Delete Field and Fields Response
+|   FIELD  	|   TYPE  	|                                    DESCRIPTION                                   	|
+|:--------:	|:-------:	|:--------------------------------------------------------------------------------:	|
+| response 	|   json  	|                 Replies back with the new JSON value of the item.                	|
+|   kode   	| integer 	| The server reply code (1 for success, 0 for no results, -1 for invalid request). 	|
+|  replyTo 	|  string 	|                    The unique code sent back (for callbacks).                    	|
+
+### Example of Delete Field and Fields Response
 ```json
 {
     "response": "{\"id\":\"1.2\"}",
     "kode": 1,
-    "replyTo": "255asd2"
+    "replyTo": "Unique String"
 }
 ```
 
-**DROP REQUESTS**
+### Drop Requests
 
 There are two ways for DROP requests, one is for dropping collections and the other for dropping database.
 * To drop a database, you can leave out `collection` from the request.
 * To drop a collection, you have to have both `collection` and `database` on the request.
 
-Example of a collection drop
-```json
-{
-    "method": "drop",
-    "database": "rose_db",
-    "collection": "Mana",
-    "unique": "Unique identifier to receive from callback."
-}
-```
+The `method` field for this request must be `drop`.
 
-It should reply with:
+### Collection Drop Request
+|   FIELD    	|  TYPE  	|                                     DESCRIPTION                                     	|
+|:----------:	|:------:	|:-----------------------------------------------------------------------------------:	|
+|   method   	| string 	|                             The type of request to send.                            	|
+|  database  	| string 	|                          The database where the collection is located.                |
+| collection 	| string 	|                               The collection to drop.                                 |
+|   unique   	| string 	| The unique value to return (used for getting back exact responses from the server). 	|
+
+### Collection Drop Response
+
+|   FIELD  	|   TYPE  	|                                              DESCRIPTION                                             	|
+|:--------:	|:-------:	|:----------------------------------------------------------------------------------------------------:	|
+| response 	|  string 	| Replies back with something among the likes of: "Successfully deleted the collection {{collection}}" 	|
+|   kode   	| integer 	|           The server reply code (1 for success, 0 for no results, -1 for invalid request).           	|
+|  replyTo 	|  string 	|                              The unique code sent back (for callbacks).                              	|
+
+### Collection Drop Example Response
 ```json
 {
     "response": "Successfully deleted the collection Mana",
@@ -286,16 +370,21 @@ It should reply with:
 }
 ```
 
-Example of a database drop:
-```json
-{
-    "method": "drop",
-    "database": "rose_db",
-    "unique": "Unique identifier to receive from callback."
-}
-```
+### Database Drop Request
+|   FIELD    	|  TYPE  	|                                     DESCRIPTION                                     	|
+|:----------:	|:------:	|:-----------------------------------------------------------------------------------:	|
+|   method   	| string 	|                             The type of request to send.                            	|
+|  database  	| string 	|                                 The database to drop.                              	  |
+|   unique   	| string 	| The unique value to return (used for getting back exact responses from the server). 	|
 
-The expected response should be
+### Database Drop Response
+|   FIELD  	|   TYPE  	|                                              DESCRIPTION                                             	|
+|:--------:	|:-------:	|:----------------------------------------------------------------------------------------------------:	|
+| response 	|  string 	| Replies back with something among the likes of: "Successfully deleted the database {{database}}" 	    |
+|   kode   	| integer 	|           The server reply code (1 for success, 0 for no results, -1 for invalid request).           	|
+|  replyTo 	|  string 	|                              The unique code sent back (for callbacks).                              	|
+
+### Database Drop Response Example
 ```json
 {
     "response": "Successfully deleted the database rose_db",
@@ -304,38 +393,49 @@ The expected response should be
 }
 ```
 
-**Revert Request**
+## Revert Request
+
+The `method` field to use for this is `revert`.
+
 You can revert an add or update request by simply sending a revert request to the server which looks like:
+
+|   FIELD    	|  TYPE  	|                                     DESCRIPTION                                     	|
+|:----------:	|:------:	|:-----------------------------------------------------------------------------------:	|
+|   method   	| string 	|                             The type of request to send.                            	|
+|  database  	| string 	|                           The database to store the item.                           	|
+| collection 	| string 	|                          The collection to store the item.                          	|
+| identifier 	| string 	|                      The identifier name of the item to revert.                     	|
+|   unique   	| string 	| The unique value to return (used for getting back exact responses from the server). 	|
+
+### Example
 ```json
 {
   "method": "revert",
-  "database": "rose_db",
-  "collection": "mana",
-  "idenitifer": "revert_test",
-  "unique": "5"
+  "database": "Database Name",
+  "collection": "Collection Name",
+  "idenitifer": "Item Name",
+  "unique": "Unique String Here"
 }
 ```
 
+### Response
+|   FIELD  	|   TYPE  	|                                    DESCRIPTION                                   	|
+|:--------:	|:-------:	|:--------------------------------------------------------------------------------:	|
+| response 	|   json  	|            Replies back with the same JSON value from the value field.           	|
+|   kode   	| integer 	| The server reply code (1 for success, 0 for no results, -1 for invalid request). 	|
+|  replyTo 	|  string 	|                    The unique code sent back (for callbacks).                    	|
+
+### Example
 The response of this request will be the last version of the file.
 ```json
 {
-  "response": "{\"test\":1}",
+  "response": "{\"version\":1}",
   "kode": 1,
   "replyTo": "Unique ID here."
 }
 ```
 
-You can also disable this feature via the config for maybe a little performance boost but I doubt it would add much, disabling the feature
-would then give out this reply to any attempt to revert:
-```json
-{
-  "response": "This method is unsupported by the server.",
-  "kode": 0,
-  "replyTo": "Unique ID here"
-}
-```
-
-Limitations of revert:
+### Limitations
 * The versions are saved on application-level cache and is dumped when the application is closed normally and not abruptly.
 * Each item is limited to one version and will be overriden each time an *ADD* or *UPDATE* request is sent that will override the item.
 
