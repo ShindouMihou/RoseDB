@@ -41,7 +41,7 @@
   * [Delete Multiple Keys or Fields Request](#delete-multiple-keys-or-fields-request)
   * [Delete Field and Fields Response](#delete-field-and-fields-response)
   * [Example of Delete Field and Fields Response](#example-of-delete-field-and-fields-response)
-  * [Drop Requests](#drop-requests)
+- [Drop Requests](#drop-requests)
   * [Collection Drop Request](#collection-drop-request)
   * [Collection Drop Response](#collection-drop-response)
   * [Collection Drop Example Response](#collection-drop-example-response)
