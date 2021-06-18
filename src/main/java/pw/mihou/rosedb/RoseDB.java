@@ -2,6 +2,9 @@ package pw.mihou.rosedb;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.LoggerFactory;
@@ -14,9 +17,8 @@ import pw.mihou.rosedb.utility.Terminal;
 import pw.mihou.rosedb.utility.UpdateChecker;
 import java.io.File;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
 import java.util.Optional;
-import java.util.UUID;
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 public class RoseDB {
@@ -30,8 +32,9 @@ public class RoseDB {
     public static int heartbeat;
     public static boolean versioning;
     public static int size;
+    public static Gson gson = new GsonBuilder().disableHtmlEscaping().create();
 
-    public static void main(String[] args) throws URISyntaxException {
+    public static void main(String[] args) throws Exception {
         String vanity = "\tr ______  ______  ______  ______  _____   ______    \n" +
                 "\tb/\\  == \\/\\  __ \\/\\  ___\\/\\  ___\\/\\  __-./\\  == \\   \n" +
                 "\ty\\ \\  __<\\ \\ \\/\\ \\ \\___  \\ \\  __\\\\ \\ \\/\\ \\ \\  __<   \n" +
@@ -60,20 +63,7 @@ public class RoseDB {
 
         Terminal.setLoggingLevel(Level.ERROR);
         if (!new File("config.json").exists()) {
-            FileHandler.writeToFile("config.json", new JSONObject()
-                    .put("directory", new File(RoseDB.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile().getPath() + File.separator + "Database" + File.separator)
-                    .put("port", port)
-                    .put("authorization", UUID.randomUUID().toString())
-                    .put("loggingLevel", "INFO")
-                    .put("cores", 1)
-                    .put("updateChecker", true)
-                    .put("preload", true)
-                    .put("maxTextMessageBufferSizeMB", 5)
-                    .put("maxTextMessageSizeMB", 5)
-                    .put("versioning", true)
-                    .put("heartbeatIntervalSeconds", 30)
-                    .put("configVersion", UpdateChecker.CONFIG_VERSION)
-                    .toString()).join();
+            FileHandler.writeToFile("config.json", defaultConfig().toString()).join();
         }
 
         JSONObject config = new JSONObject(FileHandler.read("config.json").join());
@@ -100,7 +90,6 @@ public class RoseDB {
             port = config.getInt("port");
             cores = config.getInt("cores");
             directory = config.getString("directory");
-            authorization = config.getString("authorization");
             preload = config.getBoolean("preload");
             buffer = config.getInt("maxTextMessageBufferSizeMB");
             size = config.getInt("maxTextMessageSizeMB");
@@ -139,6 +128,44 @@ public class RoseDB {
                         .orElse("INFO")));
 
                 FileHandler.setDirectory(directory);
+
+                Scanner scan = new Scanner(System.in);
+                if(!new File(FileHandler.format(".rose_secrets", ".rose_heart", "passwd")).exists()){
+                    if(config.isNull("authorization")){
+                        System.out.println("It seems like this is your first installation of RoseDB, welcome!");
+                        System.out.println("To start, please set your secure Authorization token for the application "
+                                +ColorPalette.ANSI_RED+"(be sure to save it!):"+ColorPalette.ANSI_RESET);
+
+
+                        String s = scan.nextLine();
+                        authorization = new String(DigestUtils.sha256(s.getBytes()));
+                    } else {
+                        System.out.println("It seems like you are migrating from an older version of RoseDB, welcome!");
+                        System.out.println("Since you are migrating, we are allowing you to pick whether to continue using your old authorization token " +
+                                "or change it? (Y to reuse/N to create new).");
+                        if(scan.nextLine().equalsIgnoreCase("y")){
+                            authorization = new String(DigestUtils.sha256(config.getString("authorization").getBytes()));
+                        } else {
+                            System.out.println("To start, please set your secure Authorization token for the application "
+                                    +ColorPalette.ANSI_RED+"(be sure to save it!):"+ColorPalette.ANSI_RESET);
+
+                            String s = scan.nextLine();
+                            authorization = new String(DigestUtils.sha256(s.getBytes()));
+                        }
+
+                        FileHandler.writeToFile("config.json", updateConfig(config).toString()).join();
+                    }
+
+                    FileHandler.write(".rose_secrets", ".rose_heart", "passwd", authorization);
+                    FileHandler.write();
+
+                    System.out.println("RoseDB will be closing, please reopen for security reasons.");
+                    System.exit(0);
+                } else {
+                    authorization = FileHandler.readData(".rose_secrets", ".rose_heart", "passwd")
+                            .orElseThrow(() -> new Exception("We couldn't access the hash token!"));
+                }
+
                 RoseServer.run(port);
             } else {
                 Terminal.log(Levels.ERROR, "Rose cannot write on read or read on {}", directory);
@@ -172,7 +199,6 @@ public class RoseDB {
         return new JSONObject().put("directory", Optional.ofNullable(original.getString("directory"))
                 .orElse(new File(RoseDB.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile().getPath() + File.separator + "Database" + File.separator))
                 .put("port", original.isNull("port") ? 5995 : original.getInt("port"))
-                .put("authorization", Optional.ofNullable(original.getString("authorization")).orElse(UUID.randomUUID().toString()))
                 .put("loggingLevel", Optional.ofNullable(original.getString("loggingLevel")).orElse("INFO"))
                 .put("cores", original.isNull("cores") ? 1 : original.getInt("cores"))
                 .put("updateChecker", original.isNull("updateChecker") || original.getBoolean("updateChecker"))
@@ -181,6 +207,21 @@ public class RoseDB {
                 .put("maxTextMessageBufferSizeMB", original.isNull("maxTextMessageBufferSizeMB") ? 5 : original.getInt("maxTextMessageBufferSizeMB"))
                 .put("maxTextMessageSizeMB", original.isNull("maxTextMessageSizeMB") ? 5 : original.getInt("maxTextMessageSizeMB"))
                 .put("heartbeatIntervalSeconds", original.isNull("heartbeatIntervalSeconds") ? 30 : original.getInt("heartbeatIntervalSeconds"))
+                .put("configVersion", UpdateChecker.CONFIG_VERSION);
+    }
+
+    private static JSONObject defaultConfig() throws URISyntaxException {
+        return new JSONObject()
+                .put("directory", new File(RoseDB.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile().getPath() + File.separator + "Database" + File.separator)
+                .put("port", port)
+                .put("loggingLevel", "INFO")
+                .put("cores", 1)
+                .put("updateChecker", true)
+                .put("preload", true)
+                .put("maxTextMessageBufferSizeMB", 5)
+                .put("maxTextMessageSizeMB", 5)
+                .put("versioning", true)
+                .put("heartbeatIntervalSeconds", 30)
                 .put("configVersion", UpdateChecker.CONFIG_VERSION);
     }
 

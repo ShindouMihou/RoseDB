@@ -1,10 +1,12 @@
 package pw.mihou.rosedb.listeners;
 
 import io.javalin.websocket.WsContext;
+import org.json.JSONException;
 import org.json.JSONObject;
 import pw.mihou.rosedb.connections.RoseServer;
 import pw.mihou.rosedb.enums.Levels;
 import pw.mihou.rosedb.enums.Listening;
+import pw.mihou.rosedb.io.entities.QueryRequest;
 import pw.mihou.rosedb.manager.RoseCollections;
 import pw.mihou.rosedb.manager.entities.RoseListener;
 import pw.mihou.rosedb.utility.Terminal;
@@ -13,6 +15,15 @@ public class AddListener implements RoseListener {
     @Override
     public Listening type() {
         return Listening.ADD;
+    }
+
+    @Override
+    public void execute(QueryRequest request, WsContext context, String unique) {
+        try {
+            execute(request.asJSONObject(), context, unique);
+        } catch (JSONException e){
+            RoseServer.reply(context, "The request was considered as invalid: " + e.getMessage(), unique, -1);
+        }
     }
 
     @Override

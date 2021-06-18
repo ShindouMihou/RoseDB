@@ -6,6 +6,7 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import io.javalin.Javalin;
 import io.javalin.core.compression.CompressionStrategy;
 import io.javalin.websocket.WsContext;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jetty.websocket.api.MessageTooLargeException;
 import org.json.JSONException;
@@ -13,9 +14,10 @@ import org.json.JSONObject;
 import pw.mihou.rosedb.RoseDB;
 import pw.mihou.rosedb.enums.Levels;
 import pw.mihou.rosedb.io.FileHandler;
+import pw.mihou.rosedb.io.RoseQuery;
 import pw.mihou.rosedb.io.Scheduler;
+import pw.mihou.rosedb.io.entities.QueryRequest;
 import pw.mihou.rosedb.listeners.*;
-import pw.mihou.rosedb.manager.RoseCollections;
 import pw.mihou.rosedb.manager.RoseDatabase;
 import pw.mihou.rosedb.manager.RoseListenerManager;
 import pw.mihou.rosedb.utility.Terminal;
@@ -32,12 +34,13 @@ import java.util.stream.Collectors;
 public class RoseServer {
 
     private static final Map<String, WsContext> context = new ConcurrentHashMap<>();
+    private static final Map<String, String> contextAttributes = new ConcurrentHashMap<>();
     private static final LoadingCache<String, RoseDatabase> database = Caffeine.newBuilder()
             .build(key -> FileHandler.readDatabase(key.toLowerCase()).join());
     private static final Scanner scanner = new Scanner(System.in).useDelimiter("\n");
 
     public static void reply(WsContext context, String response, int kode) {
-        if(context != null) {
+        if (context != null) {
             context.send(new JSONObject().put("response", response).put("kode", kode).toString());
         } else {
             Terminal.log(Levels.INFO, new JSONObject().put("response", response).put("kode", kode).toString());
@@ -45,7 +48,7 @@ public class RoseServer {
     }
 
     public static void reply(WsContext context, JSONObject response, String unique, int kode) {
-        if(context != null) {
+        if (context != null) {
             context.send(response.put("kode", kode).put("replyTo", unique).toString());
         } else {
             Terminal.log(Levels.INFO, response.put("kode", kode).put("replyTo", unique).toString());
@@ -53,7 +56,7 @@ public class RoseServer {
     }
 
     public static void reply(WsContext context, String response, String unique, int kode) {
-        if(context != null) {
+        if (context != null) {
             context.send(new JSONObject().put("response", response).put("kode", kode)
                     .put("replyTo", unique).toString());
         } else {
@@ -93,7 +96,7 @@ public class RoseServer {
         Terminal.log(Levels.DEBUG, "Heartbeat listener is now active.");
     }
 
-    private static void startWriter(){
+    private static void startWriter() {
         Scheduler.schedule(FileHandler::write, 5, 5, TimeUnit.SECONDS);
     }
 
@@ -105,7 +108,7 @@ public class RoseServer {
             Terminal.log(Levels.WARNING, "For maximum performance, we recommend turning off DEBUG mode unless needed (especially when requests can reach large sizes).");
         }
 
-        if(RoseDB.preload){
+        if (RoseDB.preload) {
             Terminal.log(Levels.INFO, "Pre-caching all data ahead of time, you may disable this behavior in config.json if you don't mind performance decrease.");
             FileHandler.preloadAll().thenAccept(unused -> Terminal.log(Levels.INFO, "All data are now pre-loaded into cache!"));
         } else {
@@ -137,17 +140,17 @@ public class RoseServer {
         }).start(port);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> context.values().stream().filter(wsContext -> wsContext.session.isOpen())
-        .forEachOrdered(wsContext -> wsContext.session.close(4002, "RoseDB is closing."))));
+                .forEachOrdered(wsContext -> wsContext.session.close(4002, "RoseDB is closing."))));
 
-        if(RoseDB.versioning) {
+        if (RoseDB.versioning) {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> database.asMap().values().forEach(roseDatabase -> roseDatabase.getCollections()
                     .forEach(collections -> collections.getVersions().forEach((s, s2) -> {
                         String location = new StringBuilder(".rose_versions")
                                 .append(File.separator)
                                 .append(roseDatabase.getDatabase())
-                                .append(File.separator).append(collections.collection)
-                                .append(File.separator).append(s)
-                                .append(".rose").toString();
+                                .append(File.separator)
+                                .append(collections.collection)
+                                .append(File.separator).toString();
 
                         if (!new File(location).exists()) {
                             boolean mkdirs = new File(location).mkdirs();
@@ -157,7 +160,7 @@ public class RoseServer {
                             }
                         }
 
-                        FileHandler.writeGzip(location, s2);
+                        FileHandler.writeGzip(location + s + ".rose", s2);
                     })))));
         }
 
@@ -167,21 +170,27 @@ public class RoseServer {
 
         Terminal.log(Levels.DEBUG, "All events and handlers are now ready.");
 
+        app.wsBefore(wsHandler -> wsHandler.onConnect(ctx -> {
+            if (new String(DigestUtils.sha256(Optional.ofNullable(ctx.header("Authorization")).orElse("").getBytes())).equals(RoseDB.authorization)) {
+                context.put(ctx.getSessionId(), ctx);
+            } else {
+                ctx.session.close(4001, "Missing or invalid Authorization header.");
+            }
+        }));
+
         app.ws("/", ws -> {
-            ws.onConnect(ctx -> {
-                if(Optional.ofNullable(ctx.header("Authorization")).orElse("").equals(RoseDB.authorization))
-                    context.put(ctx.getSessionId(), ctx);
-                else
-                    ctx.session.close(4001, "Missing or invalid Authorization header.");
-            });
             ws.onClose(ctx -> context.remove(ctx.getSessionId()));
             ws.onMessage(ctx -> {
                 try {
-                    RoseListenerManager.execute(new JSONObject(ctx.message()), ctx);
+                    QueryRequest req = RoseQuery.parse(ctx.message());
+                    if(!req.isValid())
+                        RoseListenerManager.execute(new JSONObject(ctx.message()), ctx);
+                    else
+                        RoseListenerManager.execute(req, ctx);
                 } catch (JSONException e) {
                     reply(ctx, "The request was considered as invalid: " + e.getMessage(), -1);
                     Terminal.log(Levels.DEBUG, "Received invalid JSON request: {} from {}", ctx.message(), ctx.session.getRemoteAddress().toString());
-                } catch (MessageTooLargeException e){
+                } catch (MessageTooLargeException e) {
                     reply(ctx, "The request was canceled by force: " + e.getMessage(), -1);
                     Terminal.log(Levels.ERROR, "Received message that was too large from {}", ctx.session.getRemoteAddress().toString());
                 }
@@ -192,14 +201,19 @@ public class RoseServer {
         startHeartbeat();
         startWriter();
 
-        while(scanner.hasNextLine()){
+        while (scanner.hasNextLine()) {
             String request = scanner.nextLine();
+            QueryRequest query = RoseQuery.parse(request);
             try {
-                RoseListenerManager.execute(new JSONObject(request), null);
+                if(query.isValid()){
+                    RoseListenerManager.execute(query.asJSONObject(), null);
+                } else {
+                    RoseListenerManager.execute(new JSONObject(request), null);
+                }
             } catch (JSONException e) {
                 reply(null, "The request was considered as invalid: " + request, -1);
                 Terminal.log(Levels.DEBUG, "Received invalid JSON request: {} from terminal", request);
-            } catch (MessageTooLargeException e){
+            } catch (MessageTooLargeException e) {
                 reply(null, "The request was canceled by force: " + e.getMessage(), -1);
                 Terminal.log(Levels.ERROR, "Received message that was too large from terminal.");
             }

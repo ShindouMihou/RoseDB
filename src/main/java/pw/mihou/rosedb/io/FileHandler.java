@@ -120,6 +120,15 @@ public class FileHandler {
     private static synchronized CompletableFuture<Void> write(String path, String value, boolean gzip) {
         return CompletableFuture.runAsync(() -> {
             try {
+
+                if (!new File(path).getParentFile().exists()) {
+                    boolean mkdirs = new File(path).getParentFile().mkdirs();
+                    if (!mkdirs) {
+                        Terminal.setLoggingLevel(Level.ERROR);
+                        Terminal.log(Levels.ERROR, "Failed to create folders for " + path + ", possibly we do not have permission to write.");
+                    }
+                }
+
                 if (!gzip) {
                     Files.writeString(Paths.get(path), value, StandardCharsets.UTF_8);
                 } else {
