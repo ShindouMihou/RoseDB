@@ -50,6 +50,9 @@ public class DeleteListener implements RoseListener {
                         } else if(keys instanceof String){
                             object.remove((String) keys);
                         }
+
+                        collections.add(request.identifier, object.toString());
+                        RoseServer.reply(context, object.toString(), unique, 1);
                     } catch (JSONException e) {
                         RoseServer.reply(context, request.identifier + " was reported as invalid JSON, did you perhaps change it manually: " + e.getMessage(), unique, -1);
                     }

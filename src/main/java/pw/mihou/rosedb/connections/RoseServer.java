@@ -7,6 +7,8 @@ import io.javalin.Javalin;
 import io.javalin.core.compression.CompressionStrategy;
 import io.javalin.websocket.WsContext;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.codec.digest.HmacAlgorithms;
+import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jetty.websocket.api.MessageTooLargeException;
 import org.json.JSONException;
@@ -24,6 +26,7 @@ import pw.mihou.rosedb.utility.Terminal;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.MessageDigest;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
@@ -171,7 +174,13 @@ public class RoseServer {
         Terminal.log(Levels.DEBUG, "All events and handlers are now ready.");
 
         app.wsBefore(wsHandler -> wsHandler.onConnect(ctx -> {
-            if (new String(DigestUtils.sha256(Optional.ofNullable(ctx.header("Authorization")).orElse("").getBytes())).equals(RoseDB.authorization)) {
+            if(ctx.header("Authorization") == null){
+                ctx.session.close(4001, "Missing or invalid Authorization header.");
+                return;
+            }
+
+            if (MessageDigest.isEqual(new HmacUtils(HmacAlgorithms.HMAC_SHA_256, RoseDB.secret)
+                            .hmacHex(ctx.header("Authorization")).getBytes(), RoseDB.authorization)){
                 context.put(ctx.getSessionId(), ctx);
             } else {
                 ctx.session.close(4001, "Missing or invalid Authorization header.");
@@ -179,6 +188,7 @@ public class RoseServer {
         }));
 
         app.ws("/", ws -> {
+
             ws.onClose(ctx -> context.remove(ctx.getSessionId()));
             ws.onMessage(ctx -> {
                 try {

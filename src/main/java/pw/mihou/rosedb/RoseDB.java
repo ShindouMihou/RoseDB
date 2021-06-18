@@ -5,6 +5,8 @@ import ch.qos.logback.classic.Logger;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.codec.digest.HmacAlgorithms;
+import org.apache.commons.codec.digest.HmacUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.LoggerFactory;
@@ -19,13 +21,15 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class RoseDB {
 
     public static int port;
     public static String directory;
-    public static String authorization;
+    public static byte[] authorization;
+    public static byte[] secret;
     public static int cores;
     public static boolean preload;
     public static int buffer;
@@ -63,7 +67,7 @@ public class RoseDB {
 
         Terminal.setLoggingLevel(Level.ERROR);
         if (!new File("config.json").exists()) {
-            FileHandler.writeToFile("config.json", defaultConfig().toString()).join();
+            FileHandler.writeToFile("config.json", defaultConfig().toString(4)).join();
         }
 
         JSONObject config = new JSONObject(FileHandler.read("config.json").join());
@@ -81,7 +85,7 @@ public class RoseDB {
 
             Terminal.log(Levels.INFO, "We have noticed that your config.json is outdated, we are currently going to perform a short configuration update.");
             Terminal.log(Levels.INFO, "Don't worry, there isn't anything you need to do on your side!");
-            FileHandler.writeToFile("config.json", updateConfig(config).toString()).join();
+            FileHandler.writeToFile("config.json", updateConfig(config).toString(4)).join();
             config = new JSONObject(FileHandler.read("config.json").join());
             Terminal.log(Levels.INFO, "Configuration update was complete.");
         }
@@ -131,45 +135,52 @@ public class RoseDB {
 
                 Scanner scan = new Scanner(System.in);
                 if(!new File(FileHandler.format(".rose_secrets", ".rose_heart", "passwd")).exists()){
+                    byte[] secret = UUID.randomUUID().toString().replaceAll("-", "").getBytes();
+                    String authorization;
                     if(config.isNull("authorization")){
                         System.out.println("It seems like this is your first installation of RoseDB, welcome!");
-                        System.out.println("To start, please set your secure Authorization token for the application "
-                                +ColorPalette.ANSI_RED+"(be sure to save it!):"+ColorPalette.ANSI_RESET);
+                        System.out.print("To start, please set your secure Authorization token for the application "
+                                +ColorPalette.ANSI_RED+"(be sure to save it!): "+ColorPalette.ANSI_RESET);
 
 
                         String s = scan.nextLine();
-                        authorization = new String(DigestUtils.sha256(s.getBytes()));
+                        authorization = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, secret).hmacHex(s);
                     } else {
                         System.out.println("It seems like you are migrating from an older version of RoseDB, welcome!");
-                        System.out.println("Since you are migrating, we are allowing you to pick whether to continue using your old authorization token " +
-                                "or change it? (Y to reuse/N to create new).");
+                        System.out.print("Since you are migrating, we are allowing you to pick whether to continue using your old authorization token " +
+                                "or change it? (Y to reuse/N to create new): ");
                         if(scan.nextLine().equalsIgnoreCase("y")){
-                            authorization = new String(DigestUtils.sha256(config.getString("authorization").getBytes()));
+                            authorization = new String(DigestUtils.sha256(config.getString("authorization")));
                         } else {
-                            System.out.println("To start, please set your secure Authorization token for the application "
-                                    +ColorPalette.ANSI_RED+"(be sure to save it!):"+ColorPalette.ANSI_RESET);
+                            System.out.print("To start, please set your secure Authorization token for the application "
+                                    +ColorPalette.ANSI_RED+"(be sure to save it!): "+ColorPalette.ANSI_RESET);
 
                             String s = scan.nextLine();
-                            authorization = new String(DigestUtils.sha256(s.getBytes()));
+                            authorization = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, secret).hmacHex(s);;
                         }
 
-                        FileHandler.writeToFile("config.json", updateConfig(config).toString()).join();
+                        FileHandler.writeToFile("config.json", updateConfig(config).toString(4)).join();
                     }
 
                     FileHandler.write(".rose_secrets", ".rose_heart", "passwd", authorization);
+                    FileHandler.write(".rose_secrets", ".rose_heart", "sec", new String(secret));
                     FileHandler.write();
 
                     System.out.println("RoseDB will be closing, please reopen for security reasons.");
                     System.exit(0);
                 } else {
                     authorization = FileHandler.readData(".rose_secrets", ".rose_heart", "passwd")
-                            .orElseThrow(() -> new Exception("We couldn't access the hash token!"));
+                            .map(String::getBytes)
+                            .orElseThrow(() -> new Exception("We couldn't read the hash token!"));
+                    secret = FileHandler.readData(".rose_secrets", ".rose_heart", "sec")
+                            .map(String::getBytes).orElseThrow(() -> new Exception("We couldn't read the hash secret."));
                 }
 
                 RoseServer.run(port);
             } else {
                 Terminal.log(Levels.ERROR, "Rose cannot write on read or read on {}", directory);
             }
+
         } catch (JSONException | ArithmeticException e){
             Terminal.log(Levels.ERROR, "An error occurred, if this is sent from startup, " +
                     "please check config.json otherwise please send an issue at https://github.com/ShindouMihou/RoseDB/issues." +
@@ -183,11 +194,15 @@ public class RoseDB {
     }
 
     private static void startUpdateChecker(){
-        Scheduler.schedule(() -> {
-            if(UpdateChecker.check()){
-                Terminal.log(Levels.INFO, "There is a newer version of RoseDB available, please update on https://github.com/ShindouMihou/RoseDB/releases");
-            }
-        }, 0, 12, TimeUnit.HOURS);
+        if(!UpdateChecker.BUILD.contains("DEV") || !UpdateChecker.BUILD.contains("SNAPSHOT")) {
+            Scheduler.schedule(() -> {
+                if (UpdateChecker.check()) {
+                    Terminal.log(Levels.INFO, "There is a newer version of RoseDB available, please update on https://github.com/ShindouMihou/RoseDB/releases");
+                }
+            }, 0, 12, TimeUnit.HOURS);
+        } else {
+            Terminal.log(Levels.INFO, "You are running a SNAPSHOT (DEV) version of RoseDB, update checking has been disabled...");
+        }
     }
 
     public static Level rootLevel(String configValue) {
@@ -213,7 +228,7 @@ public class RoseDB {
     private static JSONObject defaultConfig() throws URISyntaxException {
         return new JSONObject()
                 .put("directory", new File(RoseDB.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile().getPath() + File.separator + "Database" + File.separator)
-                .put("port", port)
+                .put("port", 5995)
                 .put("loggingLevel", "INFO")
                 .put("cores", 1)
                 .put("updateChecker", true)

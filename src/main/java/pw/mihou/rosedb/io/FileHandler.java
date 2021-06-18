@@ -17,8 +17,10 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -49,20 +51,16 @@ public class FileHandler {
         return CompletableFuture.supplyAsync(() -> {
             try (BufferedReader r = (!gzip ? Files.newBufferedReader(Paths.get(path)) :
                     new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(new File(path)), 65536))))) {
-                return r.readLine();
+                return r.lines().collect(Collectors.joining("\n"));
             } catch (IOException e) {
                 Terminal.log(Levels.ERROR, e.getMessage());
+                throw new CompletionException(e);
             }
-            return "";
         }, Scheduler.getExecutorService());
     }
 
     public static CompletableFuture<String> readGzip(String path) {
         return read(path, true);
-    }
-
-    public static CompletableFuture<Void> compress(String path) {
-        return read(path, false).thenAccept(s -> writeGzip(path, s));
     }
 
     public static boolean delete(String database, String collection, String identifier) {
@@ -104,7 +102,7 @@ public class FileHandler {
     }
 
     public static synchronized void write() {
-        if(!threadFull.get()) {
+        if (!threadFull.get()) {
             threadFull.set(true);
 
             while (!queue.isEmpty()) {
@@ -120,12 +118,13 @@ public class FileHandler {
     private static synchronized CompletableFuture<Void> write(String path, String value, boolean gzip) {
         return CompletableFuture.runAsync(() -> {
             try {
-
-                if (!new File(path).getParentFile().exists()) {
-                    boolean mkdirs = new File(path).getParentFile().mkdirs();
-                    if (!mkdirs) {
-                        Terminal.setLoggingLevel(Level.ERROR);
-                        Terminal.log(Levels.ERROR, "Failed to create folders for " + path + ", possibly we do not have permission to write.");
+                if(!FilenameUtils.getFullPath(path).isEmpty()) {
+                    if (!new File(FilenameUtils.getFullPath(path)).exists()) {
+                        boolean mkdirs = new File(FilenameUtils.getFullPath(path)).mkdirs();
+                        if (!mkdirs) {
+                            Terminal.setLoggingLevel(Level.ERROR);
+                            Terminal.log(Levels.ERROR, "Failed to create folders " + FilenameUtils.getFullPath(path) + ", possibly we do not have permission to write.");
+                        }
                     }
                 }
 
@@ -249,7 +248,22 @@ public class FileHandler {
             File[] contents = new File(format(database, collection)).listFiles(filter);
 
             if (contents != null) {
-                Arrays.stream(contents).forEach(file -> compress(file.getPath()));
+                Arrays.stream(contents).map(File::getPath)
+                .forEachOrdered(path -> {
+                    read(path, false).thenAccept(s -> {
+                        if (s != null && s.isEmpty() && s.isBlank()) {
+                            writeGzip(path, s);
+                        }
+                    }).exceptionally(throwable -> {
+                        if (throwable != null) {
+                            Terminal.log.error("An error occurred while trying to write on {} this usually happens if you are trying to migrate from" +
+                                    " v1.1 to > v1.2 version with > v1.2 version data, please move the Database folder first before retrying then after configuration is updated, " +
+                                    "you may add the Database folder again.", path);
+                            Terminal.log.error(throwable.getMessage());
+                        }
+                        return null;
+                    });
+                });
             }
         });
     }
