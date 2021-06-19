@@ -14,9 +14,14 @@ import pw.mihou.rosedb.connections.RoseServer;
 import pw.mihou.rosedb.enums.Levels;
 import pw.mihou.rosedb.io.FileHandler;
 import pw.mihou.rosedb.io.Scheduler;
+import pw.mihou.rosedb.io.readers.RoseReader;
+import pw.mihou.rosedb.io.writers.RoseWriter;
 import pw.mihou.rosedb.utility.ColorPalette;
+import pw.mihou.rosedb.utility.RoseSSL;
 import pw.mihou.rosedb.utility.Terminal;
 import pw.mihou.rosedb.utility.UpdateChecker;
+
+import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.util.Optional;
@@ -36,42 +41,31 @@ public class RoseDB {
     public static int heartbeat;
     public static boolean versioning;
     public static int size;
+    public static SSLContext sslContext;
     public static Gson gson = new GsonBuilder().disableHtmlEscaping().create();
 
+    /**
+     * The main method which is ran at the very start of the application.
+     * @param args The arguments from the JVM.
+     * @throws Exception A random exception.
+     */
     public static void main(String[] args) throws Exception {
-        String vanity = "\tr ______  ______  ______  ______  _____   ______    \n" +
-                "\tb/\\  == \\/\\  __ \\/\\  ___\\/\\  ___\\/\\  __-./\\  == \\   \n" +
-                "\ty\\ \\  __<\\ \\ \\/\\ \\ \\___  \\ \\  __\\\\ \\ \\/\\ \\ \\  __<   \n" +
-                "\tc \\ \\_\\ \\_\\ \\_____\\/\\_____\\ \\_____\\ \\____-\\ \\_____\\ \n" +
-                "\tr  \\/_/ /_/\\/_____/\\/_____/\\/_____/\\/____/ \\/_____/n";
-        vanity = vanity.replaceAll("r", ColorPalette.ANSI_RED)
+        System.out.println(vanity.replaceAll("r", ColorPalette.ANSI_RED)
                 .replaceAll("g", ColorPalette.ANSI_GREEN)
                 .replaceAll("b", ColorPalette.ANSI_BLUE)
                 .replaceAll("y", ColorPalette.ANSI_YELLOW)
                 .replaceAll("c", ColorPalette.ANSI_CYAN)
-                .replaceAll("n", ColorPalette.ANSI_RESET);
-        System.out.println(vanity);
+                .replaceAll("n", ColorPalette.ANSI_RESET));
         System.out.printf("Version: %s, Build: %s, Configuration Version: %s, Creator: %s\n", UpdateChecker.VERSION, UpdateChecker.BUILD, UpdateChecker.CONFIG_VERSION, "Shindou Mihou");
 
-        ((Logger) LoggerFactory.getLogger("io.javalin.Javalin")).setLevel(Level.ERROR);
-        ((Logger) LoggerFactory.getLogger("org.eclipse.jetty.util.log")).setLevel(Level.ERROR);
-        System.setProperty("org.eclipse.jetty.util.log.class", "org.eclipse.jetty.util.log.StdErrLog");
-        System.setProperty("org.eclipse.jetty.LEVEL", "OFF");
-        System.setProperty("org.eclipse.jetty.util.log.announce", "false");
-        ((Logger) LoggerFactory.getLogger("io.javalin.Javalin")).setLevel(Level.ERROR);
-        ((Logger) LoggerFactory.getLogger("org.eclipse.jetty.util.log")).setLevel(Level.ERROR);
-        ((Logger) LoggerFactory.getLogger("org.eclipse.jetty")).setLevel(Level.ERROR);
-        ((Logger) LoggerFactory.getLogger("o.e.jetty.io")).setLevel(Level.ERROR);
-        ((Logger) LoggerFactory.getLogger("o.e.j.w.common")).setLevel(Level.ERROR);
-
-
+        disableAllExternalLogging();
         Terminal.setLoggingLevel(Level.ERROR);
+
         if (!new File("config.json").exists()) {
-            FileHandler.writeToFile("config.json", defaultConfig().toString(4)).join();
+            RoseWriter.write("config.json", defaultConfig().toString(4));
         }
 
-        JSONObject config = new JSONObject(FileHandler.read("config.json").join());
-
+        JSONObject config = new JSONObject(RoseReader.read("config.json").join());
         if (config.isNull("configVersion") || !config.getString("configVersion").equals(UpdateChecker.CONFIG_VERSION)) {
 
             if(config.isNull("configVersion") || !config.isNull("configVersion") && Double.parseDouble(config.getString("configVersion")) < 1.2){
@@ -80,13 +74,13 @@ public class RoseDB {
                                 .getParentFile().getPath() + File.separator + "Database" + File.separator : config.getString("directory"));
                 Terminal.log(Levels.INFO, "Your configuration was detected to be from a version < 1.2 which meant the data files are utilizing an older format.");
                 Terminal.log(Levels.INFO, "We will perform a short migration to the newer file format real quick... please do not close!");
-                FileHandler.migrateAll().join();
+                FileHandler.migrateAll();
             }
 
             Terminal.log(Levels.INFO, "We have noticed that your config.json is outdated, we are currently going to perform a short configuration update.");
             Terminal.log(Levels.INFO, "Don't worry, there isn't anything you need to do on your side!");
-            FileHandler.writeToFile("config.json", updateConfig(config).toString(4)).join();
-            config = new JSONObject(FileHandler.read("config.json").join());
+            RoseWriter.write("config.json", updateConfig(config).toString(4));
+            config = new JSONObject(RoseReader.read("config.json").join());
             Terminal.log(Levels.INFO, "Configuration update was complete.");
         }
 
@@ -112,6 +106,43 @@ public class RoseDB {
                 Terminal.log(Levels.ERROR, "Also, another warning, RoseDB isn't supposed to be used for handling large files.");
                 Terminal.log(Levels.ERROR, "Please change the value on config.json, we recommend keeping it at 5 MB to 12 MB.");
                 return;
+            }
+
+            if(new File("ssl.json").exists()){
+                JSONObject sslConf = new JSONObject(RoseReader.read("ssl.json").join());
+
+                if(sslConf.isNull("storeType")) {
+                    if (sslConf.isNull("pathToPEM")) {
+                        Terminal.log(Levels.ERROR, "Path to SSL does not exist, [pathToPEM] on ssl.json needs a value.");
+                        return;
+                    }
+
+                    if (sslConf.isNull("keyPassword")) {
+                        Terminal.log(Levels.ERROR, "Key Password for SSL does not exist, [keyPassword] on ssl.json needs a value.");
+                        return;
+                    }
+
+                    sslContext = RoseSSL.getSSLContextFromLetsEncrypt(sslConf.getString("pathToPEM"), sslConf.getString("keyPassword"));
+                } else {
+                    // String storeType, String keystore, String storePassword, String keyPassword
+                    if(sslConf.isNull("keyStore")){
+                        Terminal.log(Levels.ERROR, "SSL Keystore does not exist, [keyStore] on ssl.json needs a value.");
+                        return;
+                    }
+
+                    if(sslConf.isNull("storePassword")){
+                        Terminal.log(Levels.ERROR, "SSL Store Password does not exist, [storePassword] on ssl.json needs a value.");
+                        return;
+                    }
+
+                    if(sslConf.isNull("keyPassword")){
+                        Terminal.log(Levels.ERROR, "Key Password does not exist, [keyPassword] on ssl.json needs a value.");
+                        return;
+                    }
+
+                    sslContext = RoseSSL.getSSLConextFromKeystore(sslConf.getString("storeType"), sslConf.getString("keyStore"),
+                            sslConf.getString("storePassword"), sslConf.getString("keyPassword"));
+                }
             }
 
             if (!new File(directory).exists()) {
@@ -156,15 +187,15 @@ public class RoseDB {
                                     +ColorPalette.ANSI_RED+"(be sure to save it!): "+ColorPalette.ANSI_RESET);
 
                             String s = scan.nextLine();
-                            authorization = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, secret).hmacHex(s);;
+                            authorization = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, secret).hmacHex(s);
                         }
 
-                        FileHandler.writeToFile("config.json", updateConfig(config).toString(4)).join();
+                        RoseWriter.write("config.json", updateConfig(config).toString(4));
                     }
 
-                    FileHandler.write(".rose_secrets", ".rose_heart", "passwd", authorization);
-                    FileHandler.write(".rose_secrets", ".rose_heart", "sec", new String(secret));
-                    FileHandler.write();
+                    RoseWriter.write(".rose_secrets", ".rose_heart", "passwd", authorization);
+                    RoseWriter.write(".rose_secrets", ".rose_heart", "sec", new String(secret));
+                    RoseWriter.write();
 
                     System.out.println("RoseDB will be closing, please reopen for security reasons.");
                     System.exit(0);
@@ -193,6 +224,11 @@ public class RoseDB {
 
     }
 
+    /**
+     * Starts the update checking towards the API.
+     * This usually checks every 12 hours to prevent spam requests towards
+     * both the API and reduce the network usage of the host server.
+     */
     private static void startUpdateChecker(){
         if(!UpdateChecker.BUILD.contains("DEV") || !UpdateChecker.BUILD.contains("SNAPSHOT")) {
             Scheduler.schedule(() -> {
@@ -205,11 +241,26 @@ public class RoseDB {
         }
     }
 
+    /**
+     * Identifies the root level set on the configuration file.
+     *
+     * @param configValue The value on the configuration file.
+     * @return The identified from the string value on the configuration file, defaults to INFO.
+     */
     public static Level rootLevel(String configValue) {
-        return configValue.equalsIgnoreCase("DEBUG") ? Level.DEBUG : (configValue.equalsIgnoreCase("INFO") ? Level.INFO :
-                (configValue.equalsIgnoreCase("ERROR") ? Level.ERROR : Level.WARN));
+        return configValue.equalsIgnoreCase("DEBUG") ? Level.DEBUG : (configValue.equalsIgnoreCase("WARNING") ? Level.WARN :
+                (configValue.equalsIgnoreCase("ERROR") ? Level.ERROR : Level.INFO));
     }
 
+    /**
+     * Moves all the old values of the older configuration that the host
+     * has and upgrades them all by adding all the values that doesn't exist.
+     *
+     * @param original The original configuration object.
+     * @return The new configuration in the form of a JSON Object.
+     * @throws URISyntaxException This is thrown if the syntax of the URI is wrong.
+     * @throws JSONException This is thrown if a value inside the old configuration doesn't match the standard.
+     */
     private static JSONObject updateConfig(JSONObject original) throws URISyntaxException, JSONException {
         return new JSONObject().put("directory", Optional.ofNullable(original.getString("directory"))
                 .orElse(new File(RoseDB.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile().getPath() + File.separator + "Database" + File.separator))
@@ -217,14 +268,22 @@ public class RoseDB {
                 .put("loggingLevel", Optional.ofNullable(original.getString("loggingLevel")).orElse("INFO"))
                 .put("cores", original.isNull("cores") ? 1 : original.getInt("cores"))
                 .put("updateChecker", original.isNull("updateChecker") || original.getBoolean("updateChecker"))
-                .put("preload", true)
-                .put("versioning", true)
+                .put("preload", original.isNull("preload") || original.getBoolean("preload"))
+                .put("versioning", original.isNull("versioning") || original.getBoolean("versioning"))
                 .put("maxTextMessageBufferSizeMB", original.isNull("maxTextMessageBufferSizeMB") ? 5 : original.getInt("maxTextMessageBufferSizeMB"))
                 .put("maxTextMessageSizeMB", original.isNull("maxTextMessageSizeMB") ? 5 : original.getInt("maxTextMessageSizeMB"))
                 .put("heartbeatIntervalSeconds", original.isNull("heartbeatIntervalSeconds") ? 30 : original.getInt("heartbeatIntervalSeconds"))
                 .put("configVersion", UpdateChecker.CONFIG_VERSION);
     }
 
+    /**
+     * The default configuration of the application,
+     * you may add new values here if you need it to persist.
+     * Any new values must also be added onto updateConfig();
+     *
+     * @return The default configuration as a JSON Object.
+     * @throws URISyntaxException This is thrown if the syntax of the URI is wrong.
+     */
     private static JSONObject defaultConfig() throws URISyntaxException {
         return new JSONObject()
                 .put("directory", new File(RoseDB.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile().getPath() + File.separator + "Database" + File.separator)
@@ -239,5 +298,34 @@ public class RoseDB {
                 .put("heartbeatIntervalSeconds", 30)
                 .put("configVersion", UpdateChecker.CONFIG_VERSION);
     }
+
+    /**
+     * Disables all external logging, this caused
+     * older versions of RoseDB to be filled with hard
+     * to read logs.
+     */
+    private static void disableAllExternalLogging(){
+        ((Logger) LoggerFactory.getLogger("io.javalin.Javalin")).setLevel(Level.ERROR);
+        ((Logger) LoggerFactory.getLogger("org.eclipse.jetty.util.log")).setLevel(Level.ERROR);
+        System.setProperty("org.eclipse.jetty.util.log.class", "org.eclipse.jetty.util.log.StdErrLog");
+        System.setProperty("org.eclipse.jetty.LEVEL", "OFF");
+        System.setProperty("org.eclipse.jetty.util.log.announce", "false");
+        ((Logger) LoggerFactory.getLogger("io.javalin.Javalin")).setLevel(Level.ERROR);
+        ((Logger) LoggerFactory.getLogger("org.eclipse.jetty.util.log")).setLevel(Level.ERROR);
+        ((Logger) LoggerFactory.getLogger("org.eclipse.jetty")).setLevel(Level.ERROR);
+        ((Logger) LoggerFactory.getLogger("o.e.jetty.io")).setLevel(Level.ERROR);
+        ((Logger) LoggerFactory.getLogger("o.e.j.w.common")).setLevel(Level.ERROR);
+    }
+
+    /**
+     * The default vanity for RoseDB.
+     * Please do not change this unless you are making
+     * your own custom build of the application.
+     */
+    private static final String vanity = "\tr ______  ______  ______  ______  _____   ______    \n" +
+            "\tb/\\  == \\/\\  __ \\/\\  ___\\/\\  ___\\/\\  __-./\\  == \\   \n" +
+            "\ty\\ \\  __<\\ \\ \\/\\ \\ \\___  \\ \\  __\\\\ \\ \\/\\ \\ \\  __<   \n" +
+            "\tc \\ \\_\\ \\_\\ \\_____\\/\\_____\\ \\_____\\ \\____-\\ \\_____\\ \n" +
+            "\tr  \\/_/ /_/\\/_____/\\/_____/\\/_____/\\/____/ \\/_____/n";
 
 }

@@ -6,7 +6,41 @@
 
     <groupId>pw.mihou</groupId>
     <artifactId>RoseDB</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0-SNAPSHOT</version>
+    <name>RoseDB</name>
+    <description>A simple NoSQL Database that is written completely in Java.</description>
+    <url>https://github.com/ShindouMihou/RoseDB/</url>
+    <licenses>
+        <license>
+            <name>Apache 2.0 License</name>
+            <url>https://github.com/ShindouMihou/RoseDB/blob/master/LICENSE</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <id>mihoushindou</id>
+            <name>Shindou Mihou</name>
+            <email>kokocrunchsh@gmail.com</email>
+            <organization>Mana Network</organization>
+            <organizationUrl>https://manabot.fun</organizationUrl>
+            <roles>
+                <role>developer</role>
+            </roles>
+            <timezone>+8</timezone>
+            <properties>
+                <picUrl>https://avatars.githubusercontent.com/u/69381903</picUrl>
+            </properties>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/ShindouMihou/RoseDB.git</connection>
+        <developerConnection>scm:git:git://github.com/ShindouMihou/RoseDB.git</developerConnection>
+        <url>https://github.com/ShindouMihou/RoseDB.git</url>
+        <tag>HEAD</tag>
+    </scm>
+
     <build>
         <plugins>
             <plugin>
@@ -50,9 +84,19 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.javalin</groupId>
-            <artifactId>javalin</artifactId>
-            <version>3.13.7</version>
+            <groupId>org.java-websocket</groupId>
+            <artifactId>Java-WebSocket</artifactId>
+            <version>1.5.1</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>3.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>21.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>

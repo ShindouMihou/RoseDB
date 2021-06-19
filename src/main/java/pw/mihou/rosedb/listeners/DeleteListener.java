@@ -1,16 +1,19 @@
 package pw.mihou.rosedb.listeners;
 
-import io.javalin.websocket.WsContext;
+import org.java_websocket.WebSocket;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import pw.mihou.rosedb.connections.RoseServer;
+import pw.mihou.rosedb.enums.Levels;
 import pw.mihou.rosedb.enums.Listening;
 import pw.mihou.rosedb.io.RoseQuery;
 import pw.mihou.rosedb.io.entities.QueryRequest;
 import pw.mihou.rosedb.manager.RoseCollections;
+import pw.mihou.rosedb.manager.RoseDatabase;
 import pw.mihou.rosedb.manager.entities.RoseListener;
+import pw.mihou.rosedb.utility.Terminal;
 
 public class DeleteListener implements RoseListener {
     @Override
@@ -19,25 +22,30 @@ public class DeleteListener implements RoseListener {
     }
 
     @Override
-    public void execute(QueryRequest request, WsContext context, String unique) {
-        JSONObject val = request.valueAsJSONObject();
-        handle(request, val.isNull("key") ? null : val.get("val"), context, unique);
+    public void execute(QueryRequest request, WebSocket context, String unique) {
+        Terminal.log(Levels.DEBUG, "Request: {} with value: {}?", request.asJSONObject().toString(), request.value != null);
+        if(request.value != null) {
+            JSONObject val = request.valueAsJSONObject();
+            handle(request, val.isNull("key") ? null : val.get("key"), context, unique);
+        } else {
+            handle(request, null, context, unique);
+        }
     }
 
     @Override
-    public void execute(JSONObject request, WsContext context, String unique) {
+    public void execute(JSONObject request, WebSocket context, String unique) {
         handle(RoseQuery.parse(request), request.isNull("key") ? null : request.get("key"), context, unique);
     }
 
-    private void handle(QueryRequest request, @Nullable Object keys, WsContext context, String unique){
+    private void handle(QueryRequest request, @Nullable Object keys, WebSocket context, String unique){
         if(request.identifier == null || request.database == null || request.collection == null){
             RoseServer.reply(context, "Missing parameters either: [key], [identifier], [database], [collection]", unique, -1);
         } else {
             if(keys == null){
-                RoseServer.getDatabase(request.database).getCollection(request.collection).delete(request.identifier);
+                RoseDatabase.getDatabase(request.database).getCollection(request.collection).delete(request.identifier);
                 RoseServer.reply(context, "The item: " + request.identifier + " was deleted.", unique, 1);
             } else {
-                RoseCollections collections = RoseServer.getDatabase(request.database).getCollection(request.collection);
+                RoseCollections collections = RoseDatabase.getDatabase(request.database).getCollection(request.collection);
                 collections.get(request.identifier).ifPresentOrElse(s -> {
                     try {
                         JSONObject object = new JSONObject(s);

@@ -6,6 +6,12 @@ import pw.mihou.rosedb.io.entities.QueryRequest;
 
 public class RoseQuery {
 
+    /**
+     * Parses the message into Query Request.
+     *
+     * @param message The message to parse.
+     * @return The Query request parsed (usually every value is null inside if invalid).
+     */
     public static QueryRequest parse(String message){
         try {
             String[] context = message.split("\\.");
@@ -44,6 +50,12 @@ public class RoseQuery {
         }
     }
 
+    /**
+     * Parses a JSONObject into Queria's Query Request.
+     *
+     * @param object The JSON Object to parse.
+     * @return The Query request parsed (usually every value is null inside if invalid).
+     */
     public static QueryRequest parse(JSONObject object){
         return RoseDB.gson.fromJson(object.toString(), QueryRequest.class);
     }
