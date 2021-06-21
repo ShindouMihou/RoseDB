@@ -3,6 +3,7 @@ package pw.mihou.rosedb.io.writers;
 import journal.io.api.Journal;
 import journal.io.api.Location;
 import pw.mihou.rosedb.RoseDB;
+import pw.mihou.rosedb.connections.RoseServer;
 import pw.mihou.rosedb.enums.Levels;
 import pw.mihou.rosedb.io.FileHandler;
 import pw.mihou.rosedb.io.Scheduler;
@@ -60,6 +61,14 @@ public class RoseWriter {
                     write(FileHandler.format(request.database, request.collection, request.identifier), request.json, true).join();
                 else
                     write(FileHandler.format(request.database, request.collection, request.identifier), request.json, true);
+            }
+
+            if(!RoseServer.isOpen) {
+                try {
+                    RoseDB.journal.close();
+                } catch (IOException exception) {
+                    Terminal.log(Levels.ERROR, "Attempt to close journal was met with {}", exception.getMessage());
+                }
             }
         } catch (IOException exception) {
             Terminal.log(Levels.ERROR, "Rose Writer has returned an exception : {}", exception.getMessage());

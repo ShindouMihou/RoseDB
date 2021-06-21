@@ -92,14 +92,6 @@ public class RoseDB {
         disableAllExternalLogging();
         Terminal.setLoggingLevel(Level.ERROR);
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                journal.close();
-            } catch (IOException exception) {
-                Terminal.log(Levels.ERROR, "Attempt to close journal was met with {}", exception.getMessage());
-            }
-        }));
-
         if (!new File("config.json").exists()) {
             RoseWriter.write("config.json", defaultConfig().toString(4));
         }

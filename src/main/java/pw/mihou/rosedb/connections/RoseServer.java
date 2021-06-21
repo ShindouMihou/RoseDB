@@ -27,6 +27,7 @@ public class RoseServer {
 
     public static final Map<String, WebSocket> context = new ConcurrentHashMap<>();
     private static final Scanner scanner = new Scanner(System.in).useDelimiter("\n");
+    public static boolean isOpen = true;
 
     /**
      * Replies to the client that doesn't have
@@ -148,6 +149,7 @@ public class RoseServer {
                     })))));
         }
 
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> isOpen = false));
         Runtime.getRuntime().addShutdownHook(new Thread(RoseWriter::write));
         Runtime.getRuntime().addShutdownHook(new Thread(Scheduler::shutdown));
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
