@@ -19,10 +19,10 @@ public class RoseQuery {
             if (context.length > 2) {
                 request.database = context[0];
                 request.collection = context[1];
-                request.method = context[2].substring(0, context[2].indexOf("("));
+                request.method = context[2].substring(0, context[2].indexOf('('));
                 if (!context[2].endsWith("()")) {
                     String item = context[2].replaceFirst(request.method + "\\(", "");
-                    item = item.substring(0, !item.contains(", ") ? item.indexOf(")") : item.indexOf(", "));
+                    item = item.substring(0, !item.contains(", ") ? item.indexOf(')') : item.indexOf(", "));
                     request.identifier = item;
                     if(context[2].contains(", ")) {
                         String req = context[2].replaceFirst(request.method + "\\(" + item + ", ", "");
@@ -32,10 +32,10 @@ public class RoseQuery {
                 }
             } else {
                 request.database = context[0];
-                request.method = context[1].substring(0, context[1].indexOf("("));
+                request.method = context[1].substring(0, context[1].indexOf('('));
                 if (!context[1].endsWith("()")) {
                     String item = context[1].replaceFirst(request.method + "\\(", "");
-                    item = item.substring(0, !item.contains(", ") ? item.indexOf(")") : item.indexOf(", "));
+                    item = item.substring(0, !item.contains(", ") ? item.indexOf(')') : item.indexOf(", "));
                     request.identifier = item;
                     if(context[1].contains(", ")) {
                         String req = context[1].replaceFirst(request.method + "\\(" + item + ", ", "");

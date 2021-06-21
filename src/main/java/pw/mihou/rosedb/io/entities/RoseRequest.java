@@ -64,4 +64,16 @@ public class RoseRequest {
         return this.request;
     }
 
+    /**
+     * Compares the two requests to figure out whether they are
+     * heading to the same item or file.
+     *
+     * @param request The request to compare.
+     * @return Are they heading to the same file?
+     */
+    public boolean compare(RoseRequest request){
+        return identifier.equals(request.identifier) && database.equals(request.database) &&
+                collection.equals(request.collection);
+    }
+
 }

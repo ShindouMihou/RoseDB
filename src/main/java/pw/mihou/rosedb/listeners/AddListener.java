@@ -10,6 +10,7 @@ import pw.mihou.rosedb.io.entities.QueryRequest;
 import pw.mihou.rosedb.manager.RoseCollections;
 import pw.mihou.rosedb.manager.RoseDatabase;
 import pw.mihou.rosedb.manager.entities.RoseListener;
+import pw.mihou.rosedb.utility.Pair;
 import pw.mihou.rosedb.utility.Terminal;
 
 public class AddListener implements RoseListener {
@@ -35,7 +36,8 @@ public class AddListener implements RoseListener {
         } else {
             Terminal.log(Levels.DEBUG, "Request to add {} with value {}", request.getString("identifier"), request.getString("value"));
             RoseCollections collections = RoseDatabase.getDatabase(request.getString("database")).getCollection(request.getString("collection"));
-            RoseServer.reply(context, collections.add(request.getString("identifier"), request.getString("value")), unique, 1);
+            Pair<Integer, String> response = collections.add(request.getString("identifier"), request.getString("value"));
+            RoseServer.reply(context, response.getRight(), unique, response.getLeft());
         }
     }
 }

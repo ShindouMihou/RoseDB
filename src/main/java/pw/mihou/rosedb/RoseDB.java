@@ -4,9 +4,16 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
+import io.github.resilience4j.timelimiter.TimeLimiter;
+import io.github.resilience4j.timelimiter.TimeLimiterConfig;
+import journal.io.api.Journal;
+import journal.io.api.JournalBuilder;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.LoggerFactory;
@@ -23,7 +30,9 @@ import pw.mihou.rosedb.utility.UpdateChecker;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
+import java.io.IOException;
 import java.net.URISyntaxException;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.UUID;
@@ -43,7 +52,29 @@ public class RoseDB {
     public static int size;
     public static SSLContext sslContext;
     public static Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+    public static Retry retry = Retry.of("roseRetry", () -> RetryConfig.custom()
+            .failAfterMaxAttempts(true).maxAttempts(500)
+            .waitDuration(Duration.ofMillis(50))
+            .retryExceptions(IOException.class)
+            .build());
+    public static TimeLimiter timeLimiter = TimeLimiter.of(TimeLimiterConfig.custom()
+    .cancelRunningFuture(true).timeoutDuration(Duration.ofSeconds(30)).build());
+    public static Journal journal;
+    static {
+        try {
+            if(!new File(".journal").exists()) {
+                if (!new File(".journal").mkdirs()) {
+                    Terminal.setLoggingLevel(Level.ERROR);
+                    Terminal.log(Levels.ERROR, "Failed to create .journal folder, possibly we do not have permission to write.");
+                }
+            }
 
+            journal = JournalBuilder.of(new File(".journal")).setChecksum(true).open();
+        } catch (IOException exception) {
+            Terminal.log(Levels.ERROR, "We couldn't open up the journal because {}, closing application...", exception.getMessage());
+            System.exit(0);
+        }
+    }
     /**
      * The main method which is ran at the very start of the application.
      * @param args The arguments from the JVM.
@@ -60,6 +91,14 @@ public class RoseDB {
 
         disableAllExternalLogging();
         Terminal.setLoggingLevel(Level.ERROR);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                journal.close();
+            } catch (IOException exception) {
+                Terminal.log(Levels.ERROR, "Attempt to close journal was met with {}", exception.getMessage());
+            }
+        }));
 
         if (!new File("config.json").exists()) {
             RoseWriter.write("config.json", defaultConfig().toString(4));

@@ -1,5 +1,8 @@
 package pw.mihou.rosedb.server;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import io.github.bucket4j.*;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.java_websocket.WebSocket;
@@ -25,10 +28,17 @@ import pw.mihou.rosedb.utility.Terminal;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.MessageDigest;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 public class ServerApplication extends WebSocketServer {
+
+    private final LoadingCache<String, Bucket> ratelimits = Caffeine.newBuilder()
+            .build(key -> Bucket4j.builder()
+                    .addLimit(Bandwidth.classic(3, Refill.greedy(3, Duration.ofSeconds(10))))
+                    .build());
 
     /**
      * Creates the server for the application.
@@ -52,8 +62,21 @@ public class ServerApplication extends WebSocketServer {
     }
 
     @Override
+    @SuppressWarnings("ConstantConditions")
     public void onOpen(WebSocket conn, ClientHandshake handshake) {
-        Terminal.log(Levels.DEBUG, "Received attempt connection from {}", conn.getRemoteSocketAddress().toString());
+        Bucket bucket = ratelimits.get(conn.getRemoteSocketAddress().getHostName());
+
+        ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
+        if(!probe.isConsumed()) {
+            Terminal.log(Levels.DEBUG, "{} has been rate-limited for more than 3 connection attempts within 5 seconds.",
+                    conn.getRemoteSocketAddress().toString());
+            conn.close(4006, "You are being rate-limited, retry in "
+                    + probe.getNanosToWaitForRefill() + " nanoseconds.");
+            return;
+        }
+
+        Terminal.log(Levels.DEBUG, "Received attempt connection from {} with remaining rates at {} tokens.",
+                conn.getRemoteSocketAddress().toString(), probe.getRemainingTokens());
         if(!handshake.hasFieldValue("Authorization")){
             conn.close(4001, "Missing or invalid Authorization header.");
             return;

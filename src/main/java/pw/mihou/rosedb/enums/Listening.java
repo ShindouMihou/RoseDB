@@ -47,7 +47,13 @@ public enum Listening {
      * The listener is listening to requests
      * with the method REVERT.
      */
-    REVERT("REVERT");
+    REVERT("REVERT"),
+
+    /**
+     * The listener is listening to requests
+     * with the method COMMAND. (SPECIAL)
+     */
+    COMMAND("COMMAND");
 
     /**
      * The value of the method on the request

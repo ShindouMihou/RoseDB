@@ -1,7 +1,6 @@
 package pw.mihou.rosedb.io.deleter;
 
 import org.apache.commons.io.FileUtils;
-import pw.mihou.rosedb.RoseDB;
 import pw.mihou.rosedb.enums.Levels;
 import pw.mihou.rosedb.io.FileHandler;
 import pw.mihou.rosedb.io.entities.RoseRequest;
