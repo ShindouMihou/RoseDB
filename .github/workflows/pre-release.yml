@@ -34,8 +34,8 @@ jobs:
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "dev-snapshot-${SHORT_SHA}"
+          automatic_release_tag: "dev-snapshot-${{ SHORT_SHA }}"
           prerelease: true
-          title: "RoseDB - Development Build ${SHORT_SHA}"
+          title: "RoseDB - Development Build ${{ SHORT_SHA }}"
           files: |
             target/*.jar
