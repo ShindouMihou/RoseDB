@@ -7,6 +7,7 @@ import pw.mihou.rosedb.io.FileHandler;
 import pw.mihou.rosedb.io.Scheduler;
 import pw.mihou.rosedb.io.deleter.RoseDeleter;
 import pw.mihou.rosedb.io.writers.RoseWriter;
+import pw.mihou.rosedb.utility.Pair;
 
 import java.io.File;
 import java.util.Collection;
@@ -68,11 +69,16 @@ public class RoseDatabase {
      *
      * @param collection The name of the collection to remove.
      */
-    public void removeCollection(String collection) {
-        this.rosy.invalidate(collection);
-        RoseWriter.queue.removeAll(RoseWriter.queue.stream().filter(r -> r.collection.equals(collection))
-                .collect(Collectors.toUnmodifiableList()));
-        Scheduler.submit(() -> RoseDeleter.deleteDirectory(new File(RoseDB.directory + "/" + database + "/" + collection + "/"), 0));
+    public Pair<Boolean, String> removeCollection(String collection) {
+        if(RoseDeleter.cleanJournal(roseRequest -> roseRequest.database.equals(database) && roseRequest.collection.equals(collection))) {
+            Pair<Boolean, String> val = RoseDeleter.deleteDirectory(new File(RoseDB.directory + File.separator + database + File.separator + collection + File.separator));
+            if(val.getLeft())
+                this.rosy.invalidate(collection);
+
+            return val;
+        }
+
+        return Pair.of(false, "Failed to clean journal for the collection.");
     }
 
     /**
@@ -90,10 +96,16 @@ public class RoseDatabase {
      *
      * @param db The database name to remove.
      */
-    public static synchronized void removeDatabase(String db) {
-        databases.invalidate(db.toLowerCase());
-        RoseWriter.queue.removeAll(RoseWriter.queue.stream().filter(r -> r.database.equals(db)).collect(Collectors.toUnmodifiableList()));
-        Scheduler.submit(() -> RoseDeleter.deleteDirectory(new File(String.format(RoseDB.directory + "/%s/", db)), 0));
+    public static synchronized Pair<Boolean, String> removeDatabase(String db) {
+        if(RoseDeleter.cleanJournal(roseRequest -> roseRequest.database.equals(db))) {
+            Pair<Boolean, String> val = RoseDeleter.deleteDirectory(new File(RoseDB.directory+File.separator +db+File.separator));
+            if (val.getLeft())
+                databases.invalidate(db.toLowerCase());
+
+            return val;
+        }
+
+        return Pair.of(false, "Failed to clean journal for the database.");
     }
 
 }

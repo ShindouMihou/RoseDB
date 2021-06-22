@@ -13,6 +13,7 @@ import pw.mihou.rosedb.io.entities.QueryRequest;
 import pw.mihou.rosedb.manager.RoseCollections;
 import pw.mihou.rosedb.manager.RoseDatabase;
 import pw.mihou.rosedb.manager.entities.RoseListener;
+import pw.mihou.rosedb.utility.Pair;
 import pw.mihou.rosedb.utility.Terminal;
 
 public class DeleteListener implements RoseListener {
@@ -42,8 +43,11 @@ public class DeleteListener implements RoseListener {
             RoseServer.reply(context, "Missing parameters either: [key], [identifier], [database], [collection]", unique, -1);
         } else {
             if(keys == null){
-                RoseDatabase.getDatabase(request.database).getCollection(request.collection).delete(request.identifier);
-                RoseServer.reply(context, "The item: " + request.identifier + " was deleted.", unique, 1);
+                Pair<Boolean, String> val = RoseDatabase.getDatabase(request.database).getCollection(request.collection).delete(request.identifier);
+                if(val.getLeft())
+                    RoseServer.reply(context, "The item: " + request.identifier + " was deleted.", unique, 1);
+                else
+                    RoseServer.reply(context, "The item: " + request.identifier + " failed to delete: " + val.getRight(), unique, 0);
             } else {
                 RoseCollections collections = RoseDatabase.getDatabase(request.database).getCollection(request.collection);
                 collections.get(request.identifier).ifPresentOrElse(s -> {
@@ -59,8 +63,8 @@ public class DeleteListener implements RoseListener {
                             object.remove((String) keys);
                         }
 
-                        collections.add(request.identifier, object.toString());
-                        RoseServer.reply(context, object.toString(), unique, 1);
+                        Pair<Integer, String> response = collections.add(request.identifier, object.toString());
+                        RoseServer.reply(context, response.getRight(), unique, response.getLeft());
                     } catch (JSONException e) {
                         RoseServer.reply(context, request.identifier + " was reported as invalid JSON, did you perhaps change it manually: " + e.getMessage(), unique, -1);
                     }

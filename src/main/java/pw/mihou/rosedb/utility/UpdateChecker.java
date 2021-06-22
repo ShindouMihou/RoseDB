@@ -27,7 +27,7 @@ public class UpdateChecker {
      * The BUILD version of the application.
      * Please change this along with the pom.xml's value.
      */
-    public static final String BUILD = "DEV-SNAPSHOT";
+    public static final String BUILD = "STABLE";
 
     /**
      * The URL-encoded version of the application version.

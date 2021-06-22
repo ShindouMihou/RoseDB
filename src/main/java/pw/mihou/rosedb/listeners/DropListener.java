@@ -8,6 +8,7 @@ import pw.mihou.rosedb.io.RoseQuery;
 import pw.mihou.rosedb.io.entities.QueryRequest;
 import pw.mihou.rosedb.manager.RoseDatabase;
 import pw.mihou.rosedb.manager.entities.RoseListener;
+import pw.mihou.rosedb.utility.Pair;
 
 public class DropListener implements RoseListener {
     @Override
@@ -31,11 +32,17 @@ public class DropListener implements RoseListener {
             RoseServer.reply(context, "Missing parameters either: [database], [collection]", unique, -1);
         } else {
             if(request.collection == null){
-                RoseDatabase.removeDatabase(request.database);
-                RoseServer.reply(context, "Successfully deleted the database " + request.database, unique, 1);
+                Pair<Boolean, String> val = RoseDatabase.removeDatabase(request.database);
+                if(val.getLeft())
+                    RoseServer.reply(context, "Successfully deleted the database " + request.database, unique, 1);
+                else
+                    RoseServer.reply(context, "Failed to delete the database " + request.database + ": " + val.getRight(), unique, 1);
             } else {
-                RoseDatabase.getDatabase(request.database).removeCollection(request.collection);
-                RoseServer.reply(context, "Successfully deleted the collection " + request.collection, unique, 1);
+                Pair<Boolean, String> val = RoseDatabase.getDatabase(request.database).removeCollection(request.collection);
+                if(val.getLeft())
+                    RoseServer.reply(context, "Successfully deleted the collection " + request.collection, unique, 1);
+                else
+                    RoseServer.reply(context, "Failed to delete the collection " + request.collection + ": " + val.getRight(), unique, 1);
             }
         }
     }

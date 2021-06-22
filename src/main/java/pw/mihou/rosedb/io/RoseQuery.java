@@ -27,7 +27,10 @@ public class RoseQuery {
                     if(context[2].contains(", ")) {
                         String req = context[2].replaceFirst(request.method + "\\(" + item + ", ", "");
                         req = req.substring(0, req.length() - 1);
-                        request.value = req;
+                        JSONObject res = new JSONObject(req);
+                        request.unique = res.optString("unique", "");
+                        res.remove("unique");
+                        request.value = res.toString();
                     }
                 }
             } else {
@@ -40,7 +43,10 @@ public class RoseQuery {
                     if(context[1].contains(", ")) {
                         String req = context[1].replaceFirst(request.method + "\\(" + item + ", ", "");
                         req = req.substring(0, req.length() - 1);
-                        request.value = req;
+                        JSONObject res = new JSONObject(req);
+                        request.unique = res.optString("unique", "");
+                        res.remove("unique");
+                        request.value = res.toString();
                     }
                 }
             }

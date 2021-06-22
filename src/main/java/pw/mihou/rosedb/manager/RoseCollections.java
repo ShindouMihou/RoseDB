@@ -79,9 +79,11 @@ public class RoseCollections {
      *
      * @param identifier The identifier of the item.
      */
-    public void delete(String identifier) {
-        this.data.invalidate(identifier);
-        Scheduler.submit(() -> RoseDeleter.delete(database, collection, identifier));
+    public Pair<Boolean, String> delete(String identifier) {
+        Pair<Boolean, String> val = RoseDeleter.delete(database, collection, identifier);
+        if(val.getLeft())
+            this.data.invalidate(identifier);
+        return val;
     }
 
     /**

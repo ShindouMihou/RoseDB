@@ -53,9 +53,7 @@ public class RoseListenerManager {
         }
 
         listeners.stream().filter(roseListener -> roseListener.type().value.equalsIgnoreCase(request.method))
-                .forEachOrdered(roseListener -> Scheduler.getExecutorService().submit(() -> roseListener.execute(request, context,
-                        request.value != null ? (request.valueAsJSONObject().isNull("unique")
-                                ? request.unique : request.valueAsJSONObject().getString("unique")) : request.unique)));
+                .forEachOrdered(roseListener -> Scheduler.getExecutorService().submit(() -> roseListener.execute(request, context, request.unique)));
     }
 
 

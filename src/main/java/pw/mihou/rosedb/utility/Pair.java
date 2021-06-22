@@ -18,4 +18,8 @@ public class Pair<T, Y> {
         return right;
     }
 
+    public static <T, Y> Pair<T, Y> of(T left, Y right){
+        return new Pair<>(left, right);
+    }
+
 }

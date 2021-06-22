@@ -10,7 +10,6 @@ import pw.mihou.rosedb.io.entities.QueryRequest;
 import pw.mihou.rosedb.manager.RoseCollections;
 import pw.mihou.rosedb.manager.RoseDatabase;
 import pw.mihou.rosedb.manager.entities.RoseListener;
-import pw.mihou.rosedb.utility.Terminal;
 
 import java.util.stream.Collectors;
 
