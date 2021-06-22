@@ -28,7 +28,11 @@ jobs:
             mvn clean verify assembly:single
             echo 'Development Build successfully created.'
 
-      - name: Run JReleaser
-        uses: jreleaser/release-action@v1
-        env:
-          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "dev-snapshot-${GITHUB_SHA::6}"
+          prerelease: true
+          title: "RoseDB - Development Build ${{ github.event.release.tag_name }} | ${GITHUB_SHA::6}"
+          files: |
+            /target/*.jar
