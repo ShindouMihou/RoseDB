@@ -12,14 +12,17 @@ jobs:
     runs-on: "ubuntu-latest"
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up JDK 11
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          
+      - name: Setup Java
         uses: actions/setup-java@v2
         with:
           java-version: '11'
           distribution: 'adopt'
-          fetch-depth: 0
-
+        
       - name: Build with Maven
         run: |
             mvn clean verify assembly:single
