@@ -24,7 +24,7 @@ with little to no configuration at all.
 Are you not convinced? Have a look at our no-configuration setup.
 1. Download the jar from Releases.
 2. Run the jar from a console: `java -jar RoseDB.jar`.
-3. Open the `config.json` and get the `Authorization` value.
+3. Type in your `Authorization` code (be sure to remember it) then restart the application.
 4. Install one of our drivers (for example, the official Java driver) and follow the isntructions to use the driver.
 
 ## 🛡️ Security
@@ -56,7 +56,6 @@ the steps of installing RoseDB.
 Configuration of RoseDB is straightforward, here is an example of a configuration file (it is on `JSON` format).
 |            FIELD           	|   TYPE  	|                                                        DESCRIPTION                                                        	|        DEFAULT VALUE        	|
 |:--------------------------:	|:-------:	|:-------------------------------------------------------------------------------------------------------------------------:	|:---------------------------:	|
-|        Authorization       	|  string 	|                          The authorization to use to validate incoming connections and requests.                          	|       A random string.      	|
 |            Cores           	| integer 	|                                      The number of cores the application should use.                                      	|              1              	|
 | maxTextMessageBufferSizeMB 	| integer 	|                          The maximum message buffer size for each message (request) received (MB)                         	|              5              	|
 |    maxTextMessageSizeMB    	| integer 	|                                  The maximum text (message/request) size to receive (MB)                                  	|              5              	|
