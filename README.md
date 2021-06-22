@@ -11,13 +11,7 @@
 RoseDB is a simple, NoSQL database that is written completely in Java containing the most basic functions that is needed for a database.
 This project was initially created as a random project for me (a shower thought) but has evolved into a learning experience for me.
 
-## Table of Contents
-- [How does it work](#how-does-it-work)
-- [Goal](#goal)
-- [Security](#security)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Wrappers](#wrappers)
+## 📦 Table of Contents
 - [Sending Requests](#sending-requests)
   * [Notice](#notice)
   * [Content-Type](#content-type)
@@ -55,13 +49,18 @@ This project was initially created as a random project for me (a shower thought)
   * [Response](#response-1)
   * [Example](#example-1)
   * [Limitations](#limitations)
+- [How to use SSL](#how-to-use-ssl)
+- [Security Policy](#security-policy)
+  * [Supported Versions](#supported-versions)
+  * [Reporting a Vulnerability](#reporting-a-vulnerability)
+  * [Add a Suggestion](#add-a-suggestion)
 
-## How does it work
+## ⚙️ How does it work
 RoseDB works with both in-memory and file data storage, for every request it receives, it stores it on a queue and also on its cache which
 will be saved immediately at an interval of 5 seconds to the specified directory. It utilizes websockets to receive and send data to clients
 and should be more than capable to process plenty of requests per second.
 
-## Goal
+## ✨ Goal
 My primary goal/aim of this project is not to create the best database but a simple database that can get you up and running in literal mere seconds
 with little to no configuration at all.
 
@@ -71,22 +70,21 @@ Are you not convinced? Have a look at our no-configuration setup.
 3. Open the `config.json` and get the `Authorization` value.
 4. Install one of our drivers (for example, the official Java driver) and follow the isntructions to use the driver.
 
-## Security
-RoseDB's current security features is a bit lacking, other than the Authorization header, there is currently no other security feature but
-we are focusing our attention to bringing more security features onto the application but since we are still in our very early stages,
+## 🛡️ Security
+RoseDB has support for websocket SSL which counts as security and also an `Authorization` header enforcement with the header being compared with hash (it is written to the disk as a hash value for security), there will be more security features and if you have more to suggest then feel free to send a Pull Request or an Issue explaining everything. We are always focusing our attention to bringing more security features onto the application but since we are still in our very early stages,
 we are trying to get everything up and running first before focusing on security.
 
 Though, in my opinion, RoseDB is more suited to be used in simple applications like tiny Discord bots that is shared among friends and not 
 large applications that require super complicated features, after all, the main aim of RoseDB is to be as simple as possible and that involves
 replication and load balancing (future).
 
-## Requirements
+## 🖥️ Requirements
 * JDK 11 (Preferably, OpenJDK 11).
 * An computer with storage, memory and a terminal.
 * A keyboard that you can type on.
 * Internet Connection (to download the JAR file, naturally).
 
-## Installation
+## 🖱️ Installation
 
 Installation of RoseDB is simple, all you need is JDK 11 (Preferably, OpenJDK 11) and tier-one extreme basic knowledge of JSON. Here are
 the steps of installing RoseDB.
@@ -97,7 +95,7 @@ the steps of installing RoseDB.
 5. **OPTIONAL** Configure the JSON config as you like.
 6. **OPTIONAL** Run the jar file again with the same line: `java -jar RoseDB.jar`
 
-## Configuration
+## 📝 Configuration
 Configuration of RoseDB is straightforward, here is an example of a configuration file (it is on `JSON` format).
 |            FIELD           	|   TYPE  	|                                                        DESCRIPTION                                                        	|        DEFAULT VALUE        	|
 |:--------------------------:	|:-------:	|:-------------------------------------------------------------------------------------------------------------------------:	|:---------------------------:	|
@@ -128,9 +126,22 @@ All requests towards RoseDB v1.1.0 must have the Authorization header which is v
 that will be backward compatible since we want to enforce this as soon as possible.
 
 ### Content-Type
-All requests must be made in the Content-Type `JSON`, please keep this in mind.
+All requests must be made in the Content-Type of `JSON` or `Queria`, all the values for requests using `Queria` will have to be in `JSON` or the server
+will reject it unconditionally.
 
 ## Get Request
+You can use the Queria format:
+```
+database.collection.get(identifier, {"unique":"Unique value for callbacks, this is optional"})
+```
+
+If you don't need the unique value for callbacks, feel free to use below:
+```
+database.collection.get(identifier)
+```
+
+Or you can choose to use the `JSON` format which has fields as written below.
+
 The `method` field for this must be `get`.
 
 | FIELD      	| TYPE   	| DESCRIPTION                                                                         	|
@@ -155,6 +166,12 @@ The `method` field for this must be `aggregate`.
 There are two types of aggregation requests (collection-level and database-level aggregation), both of which has a similar request.
 
 ### Collection Request
+You can use the Queria format:
+```
+database.collection.aggregate()
+```
+
+Or if you like, feel free to use the `JSON` format which has fields as written below:
 |   FIELD    	|  TYPE  	|                                     DESCRIPTION                                     	|
 |:----------:	|:------:	|:-----------------------------------------------------------------------------------:	|
 |   method   	| string 	|                             The type of request to send.                            	|
@@ -184,6 +201,12 @@ There are two types of aggregation requests (collection-level and database-level
 ```
 
 ### Database Request
+You can use the Queria format:
+```
+database.aggregate()
+```
+
+Or if you like, feel free to use the JSON format which has fields as written below:
 |   FIELD    	|  TYPE  	|                                     DESCRIPTION                                     	|
 |:----------:	|:------:	|:-----------------------------------------------------------------------------------:	|
 |   method   	| string 	|                             The type of request to send.                            	|
@@ -216,6 +239,18 @@ There are two types of aggregation requests (collection-level and database-level
 ```
 
 ## Add and Update Requests
+You can use the Queria format:
+```
+database.collection.add(identifier, {"someKey":"value","unique":"Unique value for callbacks, this is optional. This will also not be added to the value, don't worry."})
+```
+
+If you don't need the unique value for callbacks, feel free to use below:
+```
+database.collection.add(identifier, {"someKey":"someValue"})
+```
+
+Or you can choose to use the `JSON` format which has fields as written below.
+
 The `method` field for this must be `add` or `update`.
 
 |   FIELD    	|  TYPE  	|                                     DESCRIPTION                                     	|
@@ -228,6 +263,18 @@ The `method` field for this must be `add` or `update`.
 |   unique   	| string 	| The unique value to return (used for getting back exact responses from the server). 	|
 
 ### Update Single Field Request
+You can use the Queria format:
+```
+database.collection.update(identifier, {"key":"value","unique":"Unique value for callbacks, this is optional. This will also not be added to the value, don't worry."})
+```
+
+If you don't need the unique value for callbacks, feel free to use below:
+```
+database.collection.update(identifier, {"key":"value"})
+```
+
+Or you can choose to use the `JSON` format which has fields as written below.
+
 |   FIELD    	|  TYPE  	|                                     DESCRIPTION                                     	|
 |:----------:	|:------:	|:-----------------------------------------------------------------------------------:	|
 |   method   	| string 	|                             The type of request to send.                            	|
@@ -239,6 +286,17 @@ The `method` field for this must be `add` or `update`.
 |   unique   	| string 	| The unique value to return (used for getting back exact responses from the server). 	|
 
 ### Update Multiple Fields Request
+You can use the Queria format:
+```
+database.collection.add(identifier, {"key":["key1","key2"],"value":["value1","value2"],"unique":"Unique value for callbacks, this is optional. This will also not be added to the value, don't worry."})
+```
+
+If you don't need the unique value for callbacks, feel free to use below:
+```
+database.collection.add(identifier, {"key":["key1","key2"],"value":["value1","value2"]})
+```
+
+Or you can choose to use the `JSON` format which has fields as written below.
 |   FIELD    	|       TYPE      	|                                     DESCRIPTION                                     	|
 |:----------:	|:---------------:	|:-----------------------------------------------------------------------------------:	|
 |   method   	|      string     	|                             The type of request to send.                            	|
@@ -278,6 +336,18 @@ The `method` field for this must be `add` or `update`.
 |  replyTo 	|  string 	|                    The unique code sent back (for callbacks).                    	|
 
 ## Delete Request
+You can use the Queria format:
+```
+database.collection.delete(identifier, {"unique":"Unique value for callbacks, this is optional. This will also not be added to the value, don't worry."})
+```
+
+If you don't need the unique value for callbacks, feel free to use below:
+```
+database.collection.delete(identifier)
+```
+
+Or you can choose to use the `JSON` format which has fields as written below.
+
 The `method` field must be `delete` for this request.
 
 ### Delete Item Request
@@ -306,6 +376,17 @@ The `method` field must be `delete` for this request.
 ```
 
 ### Delete Key or Field Request
+You can use the Queria format:
+```
+database.collection.delete(identifier, {"key":"value","unique":"Unique value for callbacks, this is optional. This will also not be added to the value, don't worry."})
+```
+
+If you don't need the unique value for callbacks, feel free to use below:
+```
+database.collection.delete(identifier, {"key":"value"})
+```
+
+Or you can choose to use the `JSON` format which has fields as written below.
 |   FIELD    	|  TYPE  	|                                     DESCRIPTION                                     	|
 |:----------:	|:------:	|:-----------------------------------------------------------------------------------:	|
 |   method   	| string 	|                             The type of request to send.                            	|
@@ -316,6 +397,17 @@ The `method` field must be `delete` for this request.
 |   unique   	| string 	| The unique value to return (used for getting back exact responses from the server). 	|
 
 ### Delete Multiple Keys or Fields Request
+You can use the Queria format:
+```
+database.collection.delete(identifier, {"key":["key1","key2"],"value":["value1","value2"],"unique":"Unique value for callbacks, this is optional. This will also not be added to the value, don't worry."})
+```
+
+If you don't need the unique value for callbacks, feel free to use below:
+```
+database.collection.delete(identifier, {"key":["key1","key2"],"value":["value1","value2"]})
+```
+
+Or you can choose to use the `JSON` format which has fields as written below.
 |   FIELD    	|       TYPE      	|                                     DESCRIPTION                                     	|
 |:----------:	|:---------------:	|:-----------------------------------------------------------------------------------:	|
 |   method   	|      string     	|                             The type of request to send.                            	|
@@ -350,6 +442,12 @@ There are two ways for DROP requests, one is for dropping collections and the ot
 The `method` field for this request must be `drop`.
 
 ### Collection Drop Request
+You can use the Queria format:
+```
+database.collection.drop()
+```
+
+Or if you like, feel free to use the `JSON` format which has fields as written below:
 |   FIELD    	|  TYPE  	|                                     DESCRIPTION                                     	|
 |:----------:	|:------:	|:-----------------------------------------------------------------------------------:	|
 |   method   	| string 	|                             The type of request to send.                            	|
@@ -375,6 +473,12 @@ The `method` field for this request must be `drop`.
 ```
 
 ### Database Drop Request
+You can use the Queria format:
+```
+database.drop()
+```
+
+Or if you like, feel free to use the `JSON` format which has fields as written below:
 |   FIELD    	|  TYPE  	|                                     DESCRIPTION                                     	|
 |:----------:	|:------:	|:-----------------------------------------------------------------------------------:	|
 |   method   	| string 	|                             The type of request to send.                            	|
@@ -402,6 +506,18 @@ The `method` field for this request must be `drop`.
 The `method` field to use for this is `revert`.
 
 You can revert an add or update request by simply sending a revert request to the server which looks like:
+
+Queria Format with unique:
+```
+database.collection.revert(identifier, {"unique":"Unique value for callbacks, this is optional. This will also not be added to the value, don't worry."})
+```
+
+Queria Format without unique:
+```
+database.collection.revert(identifier)
+```
+
+Or if you like, feel free to use the `JSON` format which has fields as written below:
 
 |   FIELD    	|  TYPE  	|                                     DESCRIPTION                                     	|
 |:----------:	|:------:	|:-----------------------------------------------------------------------------------:	|
@@ -443,39 +559,47 @@ The response of this request will be the last version of the file.
 * The versions are saved on application-level cache and is dumped when the application is closed normally and not abruptly.
 * Each item is limited to one version and will be overriden each time an *ADD* or *UPDATE* request is sent that will override the item.
 
-## Image Examples
-* Collection Drop: 
+## How to use SSL?
+To use SSL, there needs to be several conditions.
+1. You must have a domain registered (for example, mihou.pw).
+2. You must have an LetsEncrypt SSL certificate.
 
-![collection drop](https://media.discordapp.net/attachments/731377154817916939/845257934480343040/unknown.png)
+If you have all of them, please proceed to the next step which is to create an `ssl.json` file which looks like this:
+```json
+{
+  "pathToPEM": "/path/to/pem",
+  "keyPassword": "SSL KEY PASSWORD"
+}
+```
+After that, restart your RoseDB server and it should attempt to use SSL for the server.
 
-* Database Drop: 
+# Security Policy
 
-![database drop](https://media.discordapp.net/attachments/731377154817916939/845257852083109928/unknown.png)
+## Supported Versions
 
-* Delete Request: 
+Use this section to tell people about which versions of your project are
+currently being supported with security updates.
 
-![delete request](https://media.discordapp.net/attachments/731377154817916939/845258886307119144/unknown.png)
+| Version | Supported          |
+| ------- | ------------------ |
+| 1.2.x   | :white_check_mark: |
+| < 1.1.0 | :x:                |
 
-* Add Request
+## Reporting a Vulnerability
 
-![add request](https://media.discordapp.net/attachments/731377154817916939/845258085589319690/unknown.png)
+To report a vulnerability, simply file an issue at [Issue Template](https://github.com/ShindouMihou/RoseDB/issues/new?assignees=ShindouMihou&labels=bug&template=bug_report.md&title=).
 
-* Get Request: 
+## Add a suggestion
 
-![get request](https://media.discordapp.net/attachments/731377154817916939/845258046812061736/unknown.png)
-
-* Aggregate Request 
-
-![aggregate request](https://media.discordapp.net/attachments/775601335931240459/846046876548595782/unknown.png)
-
-## TODO
-* Add more security features.
-* Improve code for readability.
+To suggest a new feature or some sort, feel free to send a suggestion issue at [Suggestion Template](https://github.com/ShindouMihou/RoseDB/issues/new?assignees=&labels=&template=feature_request.md&title=)
 
 ## Maintainers
-[Shindou Mihou](https://github.com/ShindouMihou)
+[Shindou Mihou](https://github.com/ShindouMihou), creator and developer.
 
 ## Credits
-* [Javalin IO](https://javalin.io) for websockets.
-* [Apache Commons IO](https://commons.apache.org/) for FilenameUtils.
+~~* [Javalin IO](https://javalin.io) for websockets.~~
+* [Bucket4j](https://github.com/vladimir-bukhtoyarov/bucket4j)
+* [TooTallNate](https://github.com/TooTallNate/Java-WebSocket)
+* [Resilience4j](https://github.com/resilience4j/resilience4j)
+* [Apache Commons](https://commons.apache.org/) for FilenameUtils.
 * [org.json](https://mvnrepository.com/artifact/org.json/json/20210307) for JSON Decoding and Encoding.
