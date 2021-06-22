@@ -3,10 +3,43 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
-    <groupId>pw.mihou</groupId>
     <artifactId>RoseDB</artifactId>
-    <version>1.1.0</version>
+    <groupId>pw.mihou</groupId>
+    <version>1.2.0</version>
+    <name>RoseDB</name>
+    <description>A simple NoSQL Database that is written completely in Java.</description>
+    <url>https://github.com/ShindouMihou/RoseDB/</url>
+    <licenses>
+        <license>
+            <name>Apache 2.0 License</name>
+            <url>https://github.com/ShindouMihou/RoseDB/blob/master/LICENSE</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <id>mihoushindou</id>
+            <name>Shindou Mihou</name>
+            <email>kokocrunchsh@gmail.com</email>
+            <organization>Mana Network</organization>
+            <organizationUrl>https://manabot.fun</organizationUrl>
+            <roles>
+                <role>developer</role>
+            </roles>
+            <timezone>+8</timezone>
+            <properties>
+                <picUrl>https://avatars.githubusercontent.com/u/69381903</picUrl>
+            </properties>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/ShindouMihou/RoseDB.git</connection>
+        <developerConnection>scm:git:git://github.com/ShindouMihou/RoseDB.git</developerConnection>
+        <url>https://github.com/ShindouMihou/RoseDB.git</url>
+        <tag>HEAD</tag>
+    </scm>
+
     <build>
         <plugins>
             <plugin>
@@ -26,6 +59,8 @@
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
+                    <finalName>RoseDB</finalName>
+                    <appendAssemblyId>false</appendAssemblyId>
                     <archive>
                         <manifest>
                             <mainClass>pw.mihou.rosedb.RoseDB</mainClass>
@@ -50,9 +85,19 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.javalin</groupId>
-            <artifactId>javalin</artifactId>
-            <version>3.13.7</version>
+            <groupId>org.java-websocket</groupId>
+            <artifactId>Java-WebSocket</artifactId>
+            <version>1.5.1</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>3.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>21.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>
@@ -65,10 +110,29 @@
             <version>2.8.0</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-assembly-plugin</artifactId>
-            <version>3.3.0</version>
-            <type>maven-plugin</type>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.15</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.vladimir-bukhtoyarov</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>6.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-retry</artifactId>
+            <version>1.7.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.sbtourist</groupId>
+            <artifactId>journalio</artifactId>
+            <version>1.4.2</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-timelimiter</artifactId>
+            <version>1.7.0</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -79,6 +143,11 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>1.2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.8.7</version>
         </dependency>
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>

@@ -1,12 +1,14 @@
 package pw.mihou.rosedb.listeners;
 
-import io.javalin.websocket.WsContext;
+import org.java_websocket.WebSocket;
 import org.json.JSONObject;
 import pw.mihou.rosedb.connections.RoseServer;
 import pw.mihou.rosedb.enums.Listening;
+import pw.mihou.rosedb.io.RoseQuery;
+import pw.mihou.rosedb.io.entities.QueryRequest;
+import pw.mihou.rosedb.manager.RoseDatabase;
 import pw.mihou.rosedb.manager.entities.RoseListener;
-
-import java.io.IOException;
+import pw.mihou.rosedb.utility.Pair;
 
 public class DropListener implements RoseListener {
     @Override
@@ -15,20 +17,32 @@ public class DropListener implements RoseListener {
     }
 
     @Override
-    public void execute(JSONObject request, WsContext context, String unique) {
-        if (request.isNull("database") && request.isNull("collection") || request.isNull("database") && !request.isNull("collection")) {
+    public void execute(QueryRequest request, WebSocket context, String unique) {
+        handle(request, context, unique);
+    }
+
+    @Override
+    public void execute(JSONObject request, WebSocket context, String unique) {
+        handle(RoseQuery.parse(request), context, unique);
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    private void handle(QueryRequest request, WebSocket context, String unique){
+        if(request.database == null && request.collection == null || request.database == null && request.collection != null){
             RoseServer.reply(context, "Missing parameters either: [database], [collection]", unique, -1);
         } else {
-            try {
-                if (request.isNull("collection")) {
-                    RoseServer.removeDatabase(request.getString("database"));
-                    RoseServer.reply(context, "Successfully deleted the database " + request.getString("database"), unique, 1);
-                } else {
-                    RoseServer.getDatabase(request.getString("database")).removeCollection(request.getString("collection"));
-                    RoseServer.reply(context, "Successfully deleted the collection " + request.getString("collection"), unique, 1);
-                }
-            } catch (IOException exception) {
-                RoseServer.reply(context, "An exception occurred: " + exception.getMessage(), unique, -1);
+            if(request.collection == null){
+                Pair<Boolean, String> val = RoseDatabase.removeDatabase(request.database);
+                if(val.getLeft())
+                    RoseServer.reply(context, "Successfully deleted the database " + request.database, unique, 1);
+                else
+                    RoseServer.reply(context, "Failed to delete the database " + request.database + ": " + val.getRight(), unique, 1);
+            } else {
+                Pair<Boolean, String> val = RoseDatabase.getDatabase(request.database).removeCollection(request.collection);
+                if(val.getLeft())
+                    RoseServer.reply(context, "Successfully deleted the collection " + request.collection, unique, 1);
+                else
+                    RoseServer.reply(context, "Failed to delete the collection " + request.collection + ": " + val.getRight(), unique, 1);
             }
         }
     }
