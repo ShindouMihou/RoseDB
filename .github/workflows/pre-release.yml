@@ -38,4 +38,4 @@ jobs:
           prerelease: true
           title: "RoseDB - Development Build ${SHORT_SHA}"
           files: |
-            /target/*.jar
+            target/*.jar
