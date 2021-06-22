@@ -25,7 +25,7 @@ Are you not convinced? Have a look at our no-configuration setup.
 1. Download the jar from Releases.
 2. Run the jar from a console: `java -jar RoseDB.jar`.
 3. Type in your `Authorization` code (be sure to remember it) then restart the application.
-4. Install one of our drivers (for example, the official Java driver) and follow the isntructions to use the driver.
+4. Install one of our drivers (for example, the official Java driver) and follow the instructions to use the driver.
 
 ## 🛡️ Security
 RoseDB has support for websocket SSL which counts as security and also an `Authorization` header enforcement with the header being compared with hash (it is written to the disk as a hash value for security), there will be more security features and if you have more to suggest then feel free to send a Pull Request or an Issue explaining everything. We are always focusing our attention to bringing more security features onto the application but since we are still in our very early stages,
