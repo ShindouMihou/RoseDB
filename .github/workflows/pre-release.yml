@@ -23,8 +23,9 @@ jobs:
           java-version: '11'
           distribution: 'adopt'
           
-      - name: Add SHORT_SHA env property with commit short sha
-        run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+      - name: Set outputs
+        id: vars
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
         
       - name: Build with Maven
         run: |
@@ -32,10 +33,11 @@ jobs:
             echo 'Development Build successfully created.'
 
       - uses: "marvinpinto/action-automatic-releases@latest"
+        id: releaser
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "dev-snapshot-${{ SHORT_SHA }}"
+          automatic_release_tag: "dev-snapshot-${{ steps.vars.outputs.sha_short }}"
           prerelease: true
-          title: "RoseDB - Development Build ${{ SHORT_SHA }}"
+          title: "RoseDB - Development Build ${{ steps.vars.outputs.sha_short }}"
           files: |
             target/*.jar
