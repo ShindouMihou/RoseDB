@@ -597,9 +597,9 @@ To suggest a new feature or some sort, feel free to send a suggestion issue at [
 [Shindou Mihou](https://github.com/ShindouMihou), creator and developer.
 
 ## Credits
-~~* [Javalin IO](https://javalin.io) for websockets.~~
-* [Bucket4j](https://github.com/vladimir-bukhtoyarov/bucket4j)
-* [TooTallNate](https://github.com/TooTallNate/Java-WebSocket)
-* [Resilience4j](https://github.com/resilience4j/resilience4j)
-* [Apache Commons](https://commons.apache.org/) for FilenameUtils.
+* [Bucket4j](https://github.com/vladimir-bukhtoyarov/bucket4j) for Rate-limiter.
+* [TooTallNate](https://github.com/TooTallNate/Java-WebSocket) for Websocket (replacing `io.javalin`).
+* [Resilience4j](https://github.com/resilience4j/resilience4j) for Retry and Timeouts.
+* [Apache Commons](https://commons.apache.org/) for FilenameUtils, Hashing, FileUtils, Hash Validation.
 * [org.json](https://mvnrepository.com/artifact/org.json/json/20210307) for JSON Decoding and Encoding.
+* [GSON](https://github.com/google/gson) for JSON Serialization and Deserialization (working in tandem with `org.json`)
