@@ -18,7 +18,7 @@ will be saved immediately at an interval of 5 seconds to the specified directory
 and should be more than capable to process plenty of requests per second.
 
 ## ✨ Goal
-My primary goal/aim of this project is not to create the best database but a simple database that can get you up and running in literal mere seconds
+My primary goal/aim of this project is not to create a simple but decent database that can get you up and running in literal mere seconds
 with little to no configuration at all.
 
 Are you not convinced? Have a look at our no-configuration setup.
